@@ -23,5 +23,6 @@
         <module>org.pitest.pitclipse.preferences.ui</module>
         <module>org.pitest.pitclipse.runner</module>
         <module>org.pitest.pitclipse.ui</module>
+		<module>meteor.eclipse.plugin.core</module>
 	</modules>
 </project>

@@ -355,7 +355,8 @@ public class PitLaunchShortcut implements ILaunchShortcut2 {
         };
     }
 
-    private Optional<IJavaElement> getLaunchElementFor(IJavaElement element) {
+    @SuppressWarnings("deprecation")
+	private Optional<IJavaElement> getLaunchElementFor(IJavaElement element) {
         switch (element.getElementType()) {
             case JAVA_PROJECT:
             case PACKAGE_FRAGMENT_ROOT:

@@ -243,23 +243,18 @@ Provides views and contextual actions to search the code for mutations and show 
 
    <plugin
          id="org.pitest.pitclipse.ui"
-         download-size="0"
-         install-size="0"
-         version="0.0.0"
-         unpack="false"/>
+         version="0.0.0"/>
 
    <plugin
          id="org.pitest.pitclipse.launch.ui"
-         download-size="0"
-         install-size="0"
-         version="0.0.0"
-         unpack="false"/>
+         version="0.0.0"/>
 
    <plugin
          id="org.pitest.pitclipse.preferences.ui"
-         download-size="0"
-         install-size="0"
-         version="0.0.0"
-         unpack="false"/>
+         version="0.0.0"/>
+
+   <plugin
+         id="meteor.eclipse.plugin.core"
+         version="0.0.0"/>
 
 </feature>

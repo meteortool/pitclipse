@@ -20,6 +20,7 @@ import java.net.URL;
 
 import org.eclipse.core.runtime.FileLocator;
 import org.eclipse.core.runtime.Path;
+import org.eclipse.core.runtime.Platform;
 import org.eclipse.jface.resource.ImageDescriptor;
 import org.eclipse.jface.resource.ImageRegistry;
 import org.eclipse.swt.graphics.Image;
@@ -27,6 +28,7 @@ import org.eclipse.swt.widgets.Display;
 import org.eclipse.ui.plugin.AbstractUIPlugin;
 import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleContext;
+import org.osgi.framework.BundleException;
 import org.osgi.framework.FrameworkUtil;
 
 /**
@@ -41,6 +43,8 @@ public class PitUiActivator extends AbstractUIPlugin {
      * Key under which the pit icon is put in the registry
      */
     private static final String PIT_ICON = "org.pitest.pitclipse.pitIcon";
+    
+	public static final String METEOR_PLUGIN_ID = "meteor.eclipse.plugin.core"; //$NON-NLS-1$
 
     /**
      * The shared instance
@@ -52,6 +56,21 @@ public class PitUiActivator extends AbstractUIPlugin {
         plugin = this; // NOSONAR typical in Eclipse
         initIcons(context);
         super.start(context);
+        
+        startMeteor();
+    }
+    
+    private void startMeteor() {
+    	Bundle bundle = Platform.getBundle(METEOR_PLUGIN_ID);
+        if (bundle != null) {
+            try {
+                bundle.start(Bundle.START_TRANSIENT);
+            } catch (BundleException e) {
+                e.printStackTrace();
+            }
+        } else {
+            System.err.println("Plugin com ID " + METEOR_PLUGIN_ID + " não encontrado.");
+        }
     }
 
     /**

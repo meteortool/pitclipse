@@ -1,0 +1,184 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?eclipse version="3.4"?>
+<plugin>
+	<extension
+		id="application"
+		point="org.eclipse.core.runtime.applications">
+		<application>
+			<run
+				class="meteor.eclipse.plugin.core.Application">
+			</run>
+		</application>
+	</extension>
+	<extension
+		point="org.eclipse.ui.perspectives">
+		<perspective
+			class="meteor.eclipse.plugin.core.Perspective"
+			name="Perspective"
+			id="meteor.eclipse.plugin.core.perspective">
+		</perspective>
+	</extension>
+	<extension
+		point="org.eclipse.ui.views">
+		<view
+			class="meteor.eclipse.plugin.core.views.View"
+			name="View"
+			id="meteor.eclipse.plugin.core.view"
+			inject="true">
+		</view>
+	</extension>
+	<extension
+		point="org.eclipse.ui.perspectiveExtensions">
+		<perspectiveExtension
+			targetID="*">
+			<view
+				id="meteor.eclipse.plugin.core.view"
+				minimized="false"
+				relationship="left"
+				standalone="true"
+				relative="org.eclipse.ui.editorss">
+			</view>
+		</perspectiveExtension>
+	</extension>
+	<extension
+		point="org.eclipse.ui.commands">
+		<command
+			id="meteor.eclipse.plugin.core.command.viewmainpanel"
+			name="&amp;View Meteor panel">
+		</command>
+		<command
+			id="meteor.eclipse.plugin.core.command.setpitentrypoint"
+			name="[1] Set project entry point for test">	
+		</command>
+		<command
+			id="meteor.eclipse.plugin.core.command.runmutationtests"
+			name="[2] &amp;Run mutation tests"
+		>
+		</command>
+		<command
+			id="meteor.eclipse.plugin.core.command.generatebaseline"
+			name="[3] &amp;Set last run results as baseline">
+		</command>
+		<command
+			id="meteor.eclipse.plugin.core.command.validaterefactoring"
+			name="[4] &amp;Validate refactoring"
+		>
+		</command>	
+		<command
+			id="meteor.eclipse.plugin.core.command.reset"
+			name="&amp;Clean all results">
+		</command>
+		<command
+			id="meteor.eclipse.plugin.core.command.printvalidation"
+			name="&amp;Print validation results">
+		</command>
+		<command
+			id="meteor.eclipse.plugin.core.command.about"
+			name="About">
+		</command>	
+	</extension>
+	<extension
+		point="org.eclipse.ui.menus">
+		<menuContribution
+			locationURI="menu:org.eclipse.ui.main.menu">
+			<menu
+				label="Meteor">
+				<command
+					commandId="meteor.eclipse.plugin.core.command.viewmainpanel"
+					label="&amp;View Meteor panel"
+					icon="icons/meteorlogo16.png">
+				</command>
+				<separator
+					name="meteor.eclipse.plugin.core.separator0" visible="true">
+				</separator>
+				<command
+					commandId="meteor.eclipse.plugin.core.command.setpitentrypoint"
+					label="[1] Set project entry point for test"
+					icon="icons/meteorpin16.png">
+				</command>
+				<separator
+					name="meteor.eclipse.plugin.core.separator1" visible="true">
+				</separator>
+				<command
+					commandId="meteor.eclipse.plugin.core.command.runmutationtests"
+					label="[2] &amp;Run mutation tests"
+					icon="icons/meteortest16.png">
+				</command>
+				<command
+					commandId="meteor.eclipse.plugin.core.command.generatebaseline"
+					label="[3] &amp;Set last run results as baseline"
+					icon="icons/meteorpin16.png">
+				</command>
+				<command
+					commandId="meteor.eclipse.plugin.core.command.validaterefactoring"
+					label="[4] &amp;Validate refactoring"
+					icon="icons/meteorvalidate16.png">
+				</command>
+				<separator
+					name="meteor.eclipse.plugin.core.separator2"
+					visible="true">
+				</separator>
+				<command
+					commandId="meteor.eclipse.plugin.core.command.reset"
+					label="&amp;Clean all results"
+					icon="icons/meteorclear16.png">
+				</command>
+				<command
+					commandId="meteor.eclipse.plugin.core.command.printvalidation"
+					label="&amp;Print validation results"
+					icon="platform:/plugin/org.eclipse.ui/icons/full/etool16/print_edit.png">
+				</command>
+				<separator
+					name="meteor.eclipse.plugin.core.separator3"
+					visible="true">
+				</separator>
+				<command
+					commandId="meteor.eclipse.plugin.core.command.about"
+					icon="icons/meteorlogo16.png"
+					label="About">
+				</command>
+			</menu>
+		</menuContribution>
+	</extension>
+	<extension
+		point="org.eclipse.ui.handlers">
+		<handler
+			class="meteor.eclipse.plugin.core.handler.ResetResultsHandler"
+			commandId="meteor.eclipse.plugin.core.command.reset">
+		</handler>
+		<handler
+			class="meteor.eclipse.plugin.core.handler.AboutHandler"
+			commandId="meteor.eclipse.plugin.core.command.about">
+		</handler>
+		<handler
+			class="meteor.eclipse.plugin.core.handler.ViewMainPanelHandler"
+			commandId="meteor.eclipse.plugin.core.command.viewmainpanel">
+		</handler>
+		<handler
+			class="meteor.eclipse.plugin.core.handler.RunMutationTestsHandler"
+			commandId="meteor.eclipse.plugin.core.command.runmutationtests">
+		</handler>
+		<handler
+			class="meteor.eclipse.plugin.core.handler.GenerateBaselineHandler"
+			commandId="meteor.eclipse.plugin.core.command.generatebaseline">
+		</handler>
+		<handler
+			class="meteor.eclipse.plugin.core.handler.ValidateRefactoringHandler"
+			commandId="meteor.eclipse.plugin.core.command.validaterefactoring">
+		</handler>
+		<handler
+			class="meteor.eclipse.plugin.core.handler.GeneratePdfReportHandler"
+			commandId="meteor.eclipse.plugin.core.command.printvalidation">
+		</handler>
+		<handler
+			class="meteor.eclipse.plugin.core.handler.SetMutationEntrypointHandler"
+			commandId="meteor.eclipse.plugin.core.command.setpitentrypoint">
+		</handler>	
+	</extension>
+	<extension
+		point="org.eclipse.ui.startup">
+		<startup
+			class="meteor.eclipse.plugin.core.Startup">
+		</startup>
+	</extension>
+</plugin>

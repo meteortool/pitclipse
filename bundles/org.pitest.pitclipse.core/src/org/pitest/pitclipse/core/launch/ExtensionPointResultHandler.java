@@ -16,9 +16,17 @@
 
 package org.pitest.pitclipse.core.launch;
 
+import java.util.Dictionary;
+import java.util.Hashtable;
+
 import org.eclipse.core.runtime.IStatus;
 import org.eclipse.core.runtime.Status;
 import org.eclipse.core.runtime.jobs.Job;
+import org.osgi.framework.BundleContext;
+import org.osgi.framework.FrameworkUtil;
+import org.osgi.framework.ServiceReference;
+import org.osgi.service.event.Event;
+import org.osgi.service.event.EventAdmin;
 import org.pitest.pitclipse.runner.PitResults;
 import org.pitest.pitclipse.runner.client.PitResultHandler;
 
@@ -29,6 +37,8 @@ import org.pitest.pitclipse.runner.client.PitResultHandler;
  * <p>Contributions are notified in a background job.</p>
  */
 public class ExtensionPointResultHandler implements PitResultHandler {
+	
+	private final String TOPIC = "onresults";
 
     public void handle(PitResults results) {
         Job.create("Reporting Pit results", monitor -> {
@@ -36,5 +46,20 @@ public class ExtensionPointResultHandler implements PitResultHandler {
             return new Status(IStatus.OK, "org.pitest.pitclipse.core.launch", "ok");
         }).schedule();
     }
+    
+    public void sendEvent(PitResults results) {
+
+    	BundleContext bundleContext = FrameworkUtil.getBundle(this.getClass()).getBundleContext();
+    	ServiceReference<EventAdmin>  x= bundleContext.getServiceReference(EventAdmin.class);
+    	EventAdmin eventAdmin = bundleContext.getService(bundleContext.getServiceReference(EventAdmin.class));
+    	
+    	Dictionary<String, Object> eventParams = new Hashtable<>();
+    	eventParams.put("results", results);
+    	
+    	eventAdmin.postEvent(new Event(TOPIC, eventParams));
+    	bundleContext.ungetService(bundleContext.getServiceReference(EventAdmin.class));
+    
+    }
+
 
 }

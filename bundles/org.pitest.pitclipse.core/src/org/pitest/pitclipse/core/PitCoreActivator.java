@@ -157,7 +157,8 @@ public class PitCoreActivator extends Plugin {
                 + File.separator + BUILD_OUTPUT_DIR);
     }
 
-    private String getBundleCanonicalPath(String bundleName) throws IOException {
+    @SuppressWarnings("deprecation")
+	private String getBundleCanonicalPath(String bundleName) throws IOException {
         return getBundleFile(Platform.getBundle(bundleName)).getCanonicalPath();
     }
 

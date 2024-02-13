@@ -73,7 +73,8 @@ public abstract class AbstractPitLaunchDelegate extends JavaLaunchDelegate {
         return PIT_RUNNER_MAIN;
     }
 
-    @Override
+    @SuppressWarnings("deprecation")
+	@Override
     public String[] getClasspath(ILaunchConfiguration launchConfig) throws CoreException {
         List<String> newClasspath = new ArrayList<>(getDefault().getPitClasspath());
         newClasspath.addAll(Arrays.asList(super.getClasspath(launchConfig)));

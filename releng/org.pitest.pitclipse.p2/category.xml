@@ -9,9 +9,13 @@
    <feature id="org.pitest.pitclipse.ui.feature">
       <category name="org.pitest.pitclipse"/>
    </feature>
+   <feature id="meteor.eclipse.plugin.feature">
+      <category name="meteor.eclipse.plugin.core"/>
+   </feature>
    <category-def name="org.pitest.pitclipse" label="Pitclipse">
       <description>
          Eclipse support for Pitest (PIT), a state of the art mutation testing system
       </description>
    </category-def>
+   <category-def name="meteor.eclipse.plugin.core" label="Meteor"/>
 </site>

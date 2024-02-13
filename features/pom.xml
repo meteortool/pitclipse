@@ -17,5 +17,6 @@
 		<module>org.pitest.feature</module>
 		<module>org.pitest.pitclipse.core.feature</module>
 		<module>org.pitest.pitclipse.ui.feature</module>
+		<module>meteor.eclipse.plugin.feature</module>
 	</modules>
 </project>
