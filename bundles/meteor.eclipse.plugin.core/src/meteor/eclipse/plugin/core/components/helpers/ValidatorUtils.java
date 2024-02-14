@@ -6,11 +6,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.apache.pdfbox.pdmodel.PDDocument;
-import org.apache.pdfbox.pdmodel.PDPage;
-import org.apache.pdfbox.pdmodel.PDPageContentStream;
-import org.apache.pdfbox.pdmodel.font.PDType1Font;
-import org.apache.pdfbox.pdmodel.font.Standard14Fonts.FontName;
 import org.pitest.util.Log;
 
 import meteor.eclipse.plugin.core.components.mutation.tests.ResultEntry;
@@ -98,44 +93,159 @@ public class ValidatorUtils {
 			Log.getLogger().info(i.toString());
 		});
 
-		// saveResultEntries(baselineResults, "C:\\Projects\\TMP\\brr.txt");
-		// saveResultEntries(lastRunResults, "C:\\Projects\\TMP\\llr.txt");
-
 		return compareResults(baselineResults, lastRunResults);
 
 	}
 	
-	public void generatePdfReport(List<ValidationResult> validationResults, String pdfFilePath) {
-        try (PDDocument document = new PDDocument()) {
-            PDPage page = new PDPage();
-            document.addPage(page);
+	/*public void generatePdfReport(List<ValidationResult> validationResults, String pdfFilePath) {
+	    try (PDDocument document = new PDDocument()) {
+	        PDPage page = new PDPage();
+	        document.addPage(page);
 
-            try (PDPageContentStream contentStream = new PDPageContentStream(document, page)) {
-                contentStream.setFont(new PDType1Font(FontName.HELVETICA_BOLD), 12);
-                contentStream.beginText();
-                contentStream.newLineAtOffset(20, 750);
-                contentStream.showText("Mutation Test Results Analysis");
-                contentStream.endText();
+	        try (PDPageContentStream contentStream = new PDPageContentStream(document, page)) {
+	            contentStream.setFont(new PDType1Font(FontName.HELVETICA_BOLD), 12);
+	            contentStream.beginText();
+	            contentStream.newLineAtOffset(20, 750);
+	            contentStream.showText("Mutation Test Results Analysis");
+	            contentStream.endText();
 
-                contentStream.setFont(new PDType1Font(FontName.HELVETICA), 10);
-                contentStream.beginText();
-                contentStream.newLineAtOffset(20, 730);
+	            contentStream.setFont(new PDType1Font(FontName.HELVETICA), 10);
+	            contentStream.setLeading(14.5f); // Define o espaçamento entre linhas
+	            contentStream.beginText();
+	            contentStream.newLineAtOffset(20, 730);
 
-                for (ValidationResult result : validationResults) {
-                    contentStream.showText(result.toString());
-                    contentStream.newLine();
-                }
+	            for (ValidationResult result : validationResults) {
+	                contentStream.showText(result.toString());
+	                contentStream.newLine();
+	            }
 
-                contentStream.endText();
+	            contentStream.endText();	    
+	        } 
+	        
+	        document.save(pdfFilePath);
+            Log.getLogger().info("PDF report generated successfully: " + pdfFilePath);
+
+	    } catch (IOException e) {
+	    	Log.getLogger().severe(e.getMessage());
+	    	Log.getLogger().severe(e.getStackTrace().toString());
+	    	throw new RuntimeException(e);
+	    }
+	}*/
+	
+   public void generateCSV(List<ValidationResult> validationResults, String filePath) {
+        try (FileWriter writer = new FileWriter(filePath)) {
+            writer.append("Line of Code,Description,Previous Detection Status,After Detection Status,Changed Behaviour\n");
+            for (ValidationResult result : validationResults) {
+                writer.append(result.getLineOfCode() + ",");
+                writer.append("\"" + result.getDescription() + "\",");
+                writer.append(result.getPreviousDetectionStatus() + ",");
+                writer.append(result.getAfterDetectionStatus() + ",");
+                writer.append(result.isChangedBehaviour() + "\n");
             }
-
-            document.save(pdfFilePath);
-            System.out.println("PDF report generated successfully: " + pdfFilePath);
+            
+            Log.getLogger().info("PDF report generated successfully: " + filePath);
         } catch (IOException e) {
-            e.printStackTrace();
+        	Log.getLogger().severe(e.getMessage());
+	        Log.getLogger().severe(e.getStackTrace().toString());
+	        throw new RuntimeException(e);
         }
     }
+   
+   
+	/*public void generatePdfReport(List<ValidationResult> validationResults, String pdfFilePath) {
+	    try (PDDocument document = new PDDocument()) {
+	        PDPage page = new PDPage();
+	        document.addPage(page);
 
+	        try (PDPageContentStream contentStream = new PDPageContentStream(document, page)) {
+	            contentStream.setFont(new PDType1Font(FontName.HELVETICA), 12);
+	            contentStream.beginText();
+	            contentStream.newLineAtOffset(20, 750);
+	            contentStream.showText("Mutation Test Results Analysis");
+	            contentStream.endText();
+
+	            float margin = 50;
+	            float yStart = 700;
+	            float tableWidth = page.getMediaBox().getWidth() - 2 * margin;
+	            int rows = validationResults.size();
+	            float rowHeight = 20;
+	            float tableHeight = rowHeight * rows;
+
+	            drawTable(document, contentStream, page, yStart, tableWidth, margin, yStart, rowHeight, tableHeight, validationResults);
+	        }
+
+	        document.save(pdfFilePath);
+	        Log.getLogger().info("PDF report generated successfully: " + pdfFilePath);
+
+	    } catch (IOException e) {
+	        Log.getLogger().severe(e.getMessage());
+	        Log.getLogger().severe(e.getStackTrace().toString());
+	        throw new RuntimeException(e);
+	    }
+	}
+
+	private void drawTable(PDDocument document, PDPageContentStream contentStream, PDPage page, float yStart, float tableWidth, float margin, float yPosition, float rowHeight, float tableHeight, List<ValidationResult> validationResults) throws IOException {
+	    float fontSize = 10;
+	    PDType1Font font = new PDType1Font(FontName.HELVETICA);
+
+	    float xStart = margin;
+	    float columnWidth = (tableWidth - 2 * margin) / 5; // Dividindo em 5 colunas
+
+	    drawRow(contentStream, yPosition, xStart, tableWidth, rowHeight, fontSize, font, "Line of Code", "Description", "Previous Detection Status", "After Detection Status", "Changed Behaviour");
+	    yPosition -= rowHeight;
+
+	    for (ValidationResult result : validationResults) {
+	        float cellHeight = calculateCellHeight(result.getDescription(), fontSize, font, columnWidth);
+	        if (yPosition - cellHeight < 50) { // Verifica se há espaço suficiente na página atual
+	            contentStream.close();
+	            document.addPage(page);
+	            contentStream = new PDPageContentStream(document, page);
+	            drawRow(contentStream, 750, xStart, tableWidth, rowHeight, fontSize, font, "Line of Code", "Description", "Previous Detection Status", "After Detection Status", "Changed Behaviour");
+	            yPosition = 700 - rowHeight; // Reinicia a posição para a próxima página
+	        }
+	        drawRow(contentStream, yPosition, xStart, tableWidth, cellHeight, fontSize, font, String.valueOf(result.getLineOfCode()), result.getDescription(), result.getPreviousDetectionStatus(), result.getAfterDetectionStatus(), String.valueOf(result.isChangedBehaviour()));
+	        yPosition -= cellHeight;
+	    }
+
+	    contentStream.close();
+	}
+
+	private void drawRow(PDPageContentStream contentStream, float y, float xStart, float tableWidth, float rowHeight, float fontSize, PDType1Font font, String... content) throws IOException {
+	    float x = xStart;
+	    boolean isHeader = (y == 700); // Verifica se é a linha do cabeçalho
+	    boolean isRed = false;
+	    if (!isHeader) {
+	        isRed = content[4].equals("false"); // Verifica se "Changed Behaviour" é false
+	    }
+	    float cellHeight = calculateCellHeight(content[1], fontSize, font, tableWidth / 5); // Calcula a altura da célula "Description"
+	    for (String text : content) {
+	        drawCell(contentStream, x, y, tableWidth / 5, cellHeight, fontSize, font, text, isHeader, isRed);
+	        x += tableWidth / 5;
+	    }
+	}
+	
+	private void drawCell(PDPageContentStream contentStream, float x, float y, float width, float height, float fontSize, PDType1Font font, String text, boolean bold, boolean red) throws IOException {
+	    contentStream.setFont(font, fontSize);
+	    if (bold) {
+	        contentStream.setFont(new PDType1Font(FontName.HELVETICA), fontSize); // Fonte em negrito para o cabeçalho
+	    }
+	    if (red) {
+	        contentStream.setNonStrokingColor(Color.RED); // Texto em vermelho se "Changed Behaviour" for false
+	    }
+	    contentStream.beginText();
+	    contentStream.newLineAtOffset(x, y - height);
+	    contentStream.showText(text);
+	    contentStream.endText();
+	    contentStream.setNonStrokingColor(Color.BLACK); // Restaura a cor padrão
+	    contentStream.addRect(x, y - height, width, height);
+	    contentStream.stroke();
+	}
+
+	private float calculateCellHeight(String text, float fontSize, PDType1Font font, float cellWidth) throws IOException {
+	    float textWidth = font.getStringWidth(text) / 1000 * fontSize;
+	    float cellHeight = (textWidth / cellWidth) * fontSize; // Calcula a altura com base no tamanho do texto e largura da célula
+	    return cellHeight;
+	}*/
 
 	/*
 	 * public static String getMutantIdentification(ResultEntry entry) { return

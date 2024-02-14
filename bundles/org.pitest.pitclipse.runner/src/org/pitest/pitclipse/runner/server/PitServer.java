@@ -16,6 +16,13 @@
 
 package org.pitest.pitclipse.runner.server;
 
+import org.osgi.framework.Bundle;
+import org.osgi.framework.BundleContext;
+import org.osgi.framework.BundleException;
+import org.osgi.framework.FrameworkUtil;
+import org.osgi.framework.ServiceReference;
+import org.osgi.service.event.Event;
+import org.osgi.service.event.EventAdmin;
 import org.pitest.pitclipse.runner.PitRequest;
 import org.pitest.pitclipse.runner.PitResults;
 import org.pitest.pitclipse.runner.client.PitClient;
@@ -24,6 +31,8 @@ import org.pitest.pitclipse.runner.io.SocketProvider;
 
 import java.io.Closeable;
 import java.io.IOException;
+import java.util.Dictionary;
+import java.util.Hashtable;
 
 /**
  * <p>A server used to communicate with a running PIT application.</p>
@@ -84,11 +93,40 @@ public class PitServer implements Closeable {
     @Override
     public void close() {
         try {
+        	sendEvent();
             socket.close();
         } catch (IOException e) {
             throw new IllegalStateException("Could not close socket", e);
         }
     }
+    
+	private final String TOPIC = "pitonclose";
+    
+	public void sendEvent() {
+	    Bundle bundle = FrameworkUtil.getBundle(this.getClass());
+	    if (bundle != null && bundle.getState() != Bundle.ACTIVE) {
+	        try {
+	            bundle.start();	            
+	        } catch (BundleException e) {
+	        	throw new RuntimeException(e);
+	        	// Lidar com exceção ao iniciar o bundle
+	        }
+	    }
+	    if (bundle.getState() == Bundle.ACTIVE) {
+            BundleContext bundleContext = bundle.getBundleContext();
+            if (bundleContext != null) {
+                ServiceReference<EventAdmin> serviceRef = bundleContext.getServiceReference(EventAdmin.class);
+                if (serviceRef != null) {
+                    EventAdmin eventAdmin = bundleContext.getService(serviceRef);
+                    if (eventAdmin != null) {
+                        Dictionary<String, Object> eventParams = new Hashtable<>();
+                        eventAdmin.postEvent(new Event(TOPIC, eventParams));
+                        bundleContext.ungetService(serviceRef);
+                    }
+                }
+            }
+        }
+	}
 
     /**
      * <p>Receives the results of the PIT analysis.</p>

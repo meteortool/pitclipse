@@ -23,7 +23,8 @@ public class Activator extends AbstractUIPlugin {
 	public static final String PLUGIN_ID = "meteor.eclipse.plugin.core"; //$NON-NLS-1$
 
 	// Topic to handle
-	private final String TOPIC = "onresults";
+	private String TOPIC_RESULTS = "pitonresults";
+	private String TOPIC_CLOSED = "pitonclose";
 
 	// The shared instance
 	private static Activator plugin;
@@ -53,7 +54,7 @@ public class Activator extends AbstractUIPlugin {
 		ServiceReference<EventAdmin> serviceRef = context.getServiceReference(EventAdmin.class);
 
 		// Define the event properties
-		String[] topics = new String[] { TOPIC };
+		String[] topics = new String[] { TOPIC_RESULTS, TOPIC_CLOSED };
 
 		// Register the event handler with the Event Admin service
 		context.registerService(EventHandler.class.getName(), (EventHandler) resultsHandler,
@@ -102,15 +103,17 @@ public class Activator extends AbstractUIPlugin {
 			// Handle the event here
 			// You can access the event properties using event.getProperty("propertyName")
 			System.out.println("Received event: " + event.getTopic());
-			if (event.getTopic().equals(TOPIC)) {
+			if (event.getTopic().equals(TOPIC_RESULTS)) {
 				this.notifiers.forEach(n -> n.notifyOnComplete((PitResults) event.getProperty("results")));
+			} else if (event.getTopic().equals(TOPIC_CLOSED)) {
+				this.notifiers.forEach(n -> n.notifyOnClose());
 			}
 		}
 	}
 
 	private Dictionary<String, Object> createEventHandlerProperties(String[] topics) {
 		Dictionary<String, Object> properties = new Hashtable<>();
-		properties.put(EventConstants.EVENT_TOPIC, new String[] { TOPIC });
+		properties.put(EventConstants.EVENT_TOPIC, new String[] { TOPIC_RESULTS, TOPIC_CLOSED });
 		return properties;
 	}
 	

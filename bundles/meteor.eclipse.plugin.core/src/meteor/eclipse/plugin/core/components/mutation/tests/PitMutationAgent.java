@@ -18,9 +18,9 @@ public class PitMutationAgent implements TestMutationAgent {
 	public void run(PluginFacade pluginFacade, ResultListenerNotifier listener, int refactoringSession)
 			throws Exception {
 
-		/*if (pluginFacade.IsLocked() || !pluginFacade.IsLocked())
+		if (pluginFacade.IsLocked())
 			error("Meteor is running a mutation testing. Wait for finish.");
-		else {*/
+		else {
 			ISelection selectedResource = pluginFacade.getSelectedResource();
 
 			if (selectedResource == null) {
@@ -29,7 +29,7 @@ public class PitMutationAgent implements TestMutationAgent {
 				pluginFacade.lock();
 				new PitLaunchShortcut().launch(selectedResource, "run");
 			}
-		//}
+		}
 
 	}
 	

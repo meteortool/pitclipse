@@ -17,6 +17,7 @@ import org.pitest.pitclipse.ui.swtbot.ResultsParser;
 import org.pitest.util.Log;
 
 import meteor.eclipse.plugin.core.Activator;
+import meteor.eclipse.plugin.core.components.helpers.FileUtils;
 import meteor.eclipse.plugin.core.components.helpers.ValidatorUtils;
 import meteor.eclipse.plugin.core.components.helpers.ValidatorUtils.ValidationResult;
 import meteor.eclipse.plugin.core.components.helpers.ViewUtils;
@@ -43,7 +44,7 @@ public class PluginFacadeImpl implements PluginFacade, ResultListenerNotifier {
 	}
 
 	public void unlock() {
-		this.isLocked = true;
+		this.isLocked = false;
 	}
 
 	@Override
@@ -64,12 +65,26 @@ public class PluginFacadeImpl implements PluginFacade, ResultListenerNotifier {
 					if (!isValidationDone) {
 						info("You must validate refactoring before generate report");
 					}	else {
-						ValidatorUtils validatorUtils = new ValidatorUtils();
-						Path tempDir = Files.createTempDirectory("pdf_reports");
+						Path tempDir;
+						String filePath = "";
 						
-						validatorUtils.generatePdfReport(validationResults, 
-														 tempDir.resolve("mutation_test_report.pdf")
-														 	.toString());
+						try {
+							ValidatorUtils validatorUtils = new ValidatorUtils();
+							tempDir = Files.createTempDirectory("meteor_reports");
+							
+							filePath = tempDir.resolve("mutation_test_report.csv").toString();							
+							validatorUtils.generateCSV(validationResults, filePath);
+							
+							if(ask("Analysis report generated successfully in path: \n\n" + filePath + "\n\n Do you want to open the report?")) {
+								FileUtils.openFileInEclipse(filePath);
+							}
+							
+						} catch (Exception e) {
+							if (filePath != "")								
+								error("Error on analysis report generation in path " +  filePath + "\n" + e.getMessage() + "\n" + e.getStackTrace());
+							else
+								error("Error on analysis report generation\n" + e.getMessage() + "\n" + e.getStackTrace());
+						}
 					}
 				}
 			}
@@ -109,6 +124,8 @@ public class PluginFacadeImpl implements PluginFacade, ResultListenerNotifier {
 					}
 					
 					isValidationDone = true;
+					
+					generatePdfAnalysisReport();
 				}
 
 			}
@@ -119,8 +136,15 @@ public class PluginFacadeImpl implements PluginFacade, ResultListenerNotifier {
 	@Override
 	public void runMutationTests() throws Exception {
 		if (ask("Do you want to run mutation tests? This process can take some minutes.")) {
-			isValidationDone = false;
 			ViewUtils.showViewMainPanel();
+			if (isValidationDone) {
+				info("This refactory session was validated before. So the last validation results will be clear, you must validate again after run mutation test.");
+				mutationAgent.setLastResults(null);
+				lastResultTestMutationScore = null;
+				validationResults = null;
+				ViewUtils.changeResult(refactoringSession, "");
+			}
+			isValidationDone = false;
 
 			if (getSelectedResource() == null) {
 				error("You must select a valid test package or a test class before running your mutation testing for this refactoring session!");
@@ -132,6 +156,32 @@ public class PluginFacadeImpl implements PluginFacade, ResultListenerNotifier {
 				mutationAgent.run(this, this, refactoringSession);
 			}
 		}
+	}
+	
+	@Override
+	public void createSessionRefactoring() throws Exception {
+		if(refactoringSession != -1 && !isValidationDone) { 
+			error("You must finish the previous session to evolve to a new refactoring session.");
+		} else { 
+			if (ask("Do you want to create a session refactoring?")) {
+				ViewUtils.showViewMainPanel();
+				refactoringSession = ViewUtils.addNewSession();
+				
+				if(refactoringSession != -1 && ask("Do you want to reuse last run result as baseline for this new refactoring session?")){
+					baselineResultTestMutationScore = lastResultTestMutationScore;			
+					ViewUtils.changeBaselineTestMutationScore(refactoringSession, baselineResultTestMutationScore);
+					mutationAgent.generateBaseline();
+				} else {
+					isValidationDone = false;
+					validationResults = null;				
+					baselineResultTestMutationScore = null;
+					mutationAgent.clearBaseline();
+				}
+				
+				mutationAgent.setLastResults(null);
+				lastResultTestMutationScore = null;						
+			}			
+		}		
 	}
 
 	@Override
@@ -152,6 +202,7 @@ public class PluginFacadeImpl implements PluginFacade, ResultListenerNotifier {
 	public void notifyOnComplete(PitResults results) {
 
 		try {
+			unlock();
 			ResultsParser parser = new ResultsParser(results);
 			mutationAgent.setLastResults(results);
 
@@ -170,6 +221,16 @@ public class PluginFacadeImpl implements PluginFacade, ResultListenerNotifier {
 			throw new RuntimeException("Error on parsing results.", e);
 		}
 
+	}
+	
+	@Override
+	public void notifyOnClose() {		
+		if (isLocked) {
+			unlock();
+			PlatformUI.getWorkbench().getDisplay().syncExec(() -> {
+				ViewUtils.changeLastResultTestMutationScore(refactoringSession, "Stopped or failure");			
+			});
+		}
 	}
 
 	public void setSelectedResource(ISelection selection) {

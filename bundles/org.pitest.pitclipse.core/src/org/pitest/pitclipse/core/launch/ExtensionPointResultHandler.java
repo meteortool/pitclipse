@@ -38,7 +38,7 @@ import org.pitest.pitclipse.runner.client.PitResultHandler;
  */
 public class ExtensionPointResultHandler implements PitResultHandler {
 	
-	private final String TOPIC = "onresults";
+	private final String TOPIC = "pitonresults";
 
     public void handle(PitResults results) {
     	sendEvent(results);

@@ -51,17 +51,21 @@
 			name="[1] Set project entry point for test">	
 		</command>
 		<command
+			id="meteor.eclipse.plugin.core.command.createrefactoringsession"
+			name="[2] Create refactoring session">	
+		</command>		
+		<command
 			id="meteor.eclipse.plugin.core.command.runmutationtests"
-			name="[2] &amp;Run mutation tests"
+			name="[3] &amp;Run mutation tests"
 		>
 		</command>
 		<command
 			id="meteor.eclipse.plugin.core.command.generatebaseline"
-			name="[3] &amp;Set last run results as baseline">
+			name="[4] &amp;Set last run results as baseline">
 		</command>
 		<command
 			id="meteor.eclipse.plugin.core.command.validaterefactoring"
-			name="[4] &amp;Validate refactoring"
+			name="[5] &amp;Validate refactoring"
 		>
 		</command>	
 		<command
@@ -100,18 +104,26 @@
 					name="meteor.eclipse.plugin.core.separator1" visible="true">
 				</separator>
 				<command
+					commandId="meteor.eclipse.plugin.core.command.createrefactoringsession"
+					label="[2] &amp;Create refatoring session"
+					icon="icons/meteorrefact16.png">
+				</command>
+				<separator
+					name="meteor.eclipse.plugin.core.separator4" visible="true">
+				</separator>		
+				<command
 					commandId="meteor.eclipse.plugin.core.command.runmutationtests"
-					label="[2] &amp;Run mutation tests"
+					label="[3] &amp;Run mutation tests"
 					icon="icons/meteortest16.png">
 				</command>
 				<command
 					commandId="meteor.eclipse.plugin.core.command.generatebaseline"
-					label="[3] &amp;Set last run results as baseline"
+					label="[4] &amp;Set last run results as baseline"
 					icon="icons/meteorpin16.png">
 				</command>
 				<command
 					commandId="meteor.eclipse.plugin.core.command.validaterefactoring"
-					label="[4] &amp;Validate refactoring"
+					label="[5] &amp;Validate refactoring"
 					icon="icons/meteorvalidate16.png">
 				</command>
 				<separator
@@ -157,6 +169,10 @@
 		<handler
 			class="meteor.eclipse.plugin.core.handler.RunMutationTestsHandler"
 			commandId="meteor.eclipse.plugin.core.command.runmutationtests">
+		</handler>
+		<handler
+			class="meteor.eclipse.plugin.core.handler.CreateRefactoringSessionHandler"
+			commandId="meteor.eclipse.plugin.core.command.createrefactoringsession">
 		</handler>
 		<handler
 			class="meteor.eclipse.plugin.core.handler.GenerateBaselineHandler"
