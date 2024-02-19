@@ -7,5 +7,7 @@
 	</classpathentry>
 	<classpathentry kind="con" path="org.eclipse.pde.core.requiredPlugins"/>
 	<classpathentry kind="src" path="src"/>
+	<classpathentry exported="true" kind="lib" path="C:/Projects-Mestrado/git/pitclipse/bundles/meteor.eclipse.plugin.core/lib/jackson-databind-2.16.1.jar"/>
+	<classpathentry exported="true" kind="lib" path="C:/Projects-Mestrado/git/pitclipse/bundles/meteor.eclipse.plugin.core/lib/jackson-core-2.16.1.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

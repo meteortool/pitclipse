@@ -1,7 +1,5 @@
 package meteor.eclipse.plugin.core.window;
 
-import org.eclipse.jface.resource.ImageDescriptor;
-import org.eclipse.jface.resource.ImageRegistry;
 import org.eclipse.jface.window.ApplicationWindow;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.Image;
@@ -24,7 +22,10 @@ public class AboutWindow extends ApplicationWindow {
         getShell().setText("About Meteor Plugin");
         parent.setLayout(new FillLayout(SWT.APPLICATION_MODAL));
 
-        Image logo = createImage("icons/meteorlogo.png");
+        Image logo =Activator
+				.getImageDescriptor("icons/meteorlogo.png")
+				.createImage();
+        
         if (logo != null) {
         	getShell().setImage(logo);
         }
@@ -55,12 +56,5 @@ public class AboutWindow extends ApplicationWindow {
             int y = parent.getLocation().y + (parent.getSize().y - shell.getSize().y) / 2;
             shell.setLocation(x, y);
         }
-    }
-
-    private Image createImage(String path) {
-        ImageRegistry imageRegistry = Activator.getDefault().getImageRegistry();
-        ImageDescriptor imageDescriptor = ImageDescriptor.createFromURL(Activator.getDefault().getBundle().getEntry(path));
-        imageRegistry.put(path, imageDescriptor);
-        return imageRegistry.get(path);
     }
 }

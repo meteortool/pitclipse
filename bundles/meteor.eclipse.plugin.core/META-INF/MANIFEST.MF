@@ -2,6 +2,7 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: Meteor Core PIT Integration
 Bundle-SymbolicName: meteor.eclipse.plugin.core;singleton:=true
+Bundle-Vendor: Tiago Samuel Rodrigues Teixeira
 Bundle-Version: 1.0.0.qualifier
 Bundle-Activator: meteor.eclipse.plugin.core.Activator
 Require-Bundle: org.eclipse.ui;bundle-version="[3.11.1,4.0.0)",
@@ -18,7 +19,8 @@ Require-Bundle: org.eclipse.ui;bundle-version="[3.11.1,4.0.0)",
  org.pitest.pitclipse.core;bundle-version="2.2.1",
  org.eclipse.core.resources,
  org.eclipse.ui.ide,
- org.eclipse.core.filesystem
+ org.eclipse.core.filesystem,
+ org.eclipse.ui.forms
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Automatic-Module-Name: meteor.eclipse.plugin.core
 Bundle-ActivationPolicy: lazy

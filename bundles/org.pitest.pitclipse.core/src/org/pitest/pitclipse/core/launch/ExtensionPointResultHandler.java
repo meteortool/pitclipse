@@ -31,36 +31,40 @@ import org.pitest.pitclipse.runner.PitResults;
 import org.pitest.pitclipse.runner.client.PitResultHandler;
 
 /**
- * <p>Notifies all contributions to the {@code results} extension point
- * that new results have been produced by PIT.</p>
+ * <p>
+ * Notifies all contributions to the {@code results} extension point that new
+ * results have been produced by PIT.
+ * </p>
  * 
- * <p>Contributions are notified in a background job.</p>
+ * <p>
+ * Contributions are notified in a background job.
+ * </p>
  */
 public class ExtensionPointResultHandler implements PitResultHandler {
-	
+
 	private final String TOPIC = "pitonresults";
 
-    public void handle(PitResults results) {
-    	sendEvent(results);
-        Job.create("Reporting Pit results", monitor -> {
-            new UpdateExtensions(results).run();
-            return new Status(IStatus.OK, "org.pitest.pitclipse.core.launch", "ok");
-        }).schedule();
-    }
-    
-    public void sendEvent(PitResults results) {
+	public void handle(PitResults results) {
+		sendEvent(results);
+		Job.create("Reporting Pit results", monitor -> {
+			new UpdateExtensions(results).run();
+			return new Status(IStatus.OK, "org.pitest.pitclipse.core.launch", "ok");
+		}).schedule();
+	}
 
-    	BundleContext bundleContext = FrameworkUtil.getBundle(this.getClass()).getBundleContext();
-    	ServiceReference<EventAdmin>  x= bundleContext.getServiceReference(EventAdmin.class);
-    	EventAdmin eventAdmin = bundleContext.getService(bundleContext.getServiceReference(EventAdmin.class));
-    	
-    	Dictionary<String, Object> eventParams = new Hashtable<>();
-    	eventParams.put("results", results);
-    	
-    	eventAdmin.postEvent(new Event(TOPIC, eventParams));
-    	bundleContext.ungetService(bundleContext.getServiceReference(EventAdmin.class));
-    
-    }
+	public void sendEvent(PitResults results) {
 
+		BundleContext bundleContext = FrameworkUtil.getBundle(this.getClass()).getBundleContext();
+		@SuppressWarnings("unused")
+		ServiceReference<EventAdmin> x = bundleContext.getServiceReference(EventAdmin.class);
+		EventAdmin eventAdmin = bundleContext.getService(bundleContext.getServiceReference(EventAdmin.class));
+
+		Dictionary<String, Object> eventParams = new Hashtable<>();
+		eventParams.put("results", results);
+
+		eventAdmin.postEvent(new Event(TOPIC, eventParams));
+		bundleContext.ungetService(bundleContext.getServiceReference(EventAdmin.class));
+
+	}
 
 }

@@ -7,6 +7,8 @@ import static meteor.eclipse.plugin.core.components.helpers.MessageUtils.info;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.LocalDateTime;
+import java.time.temporal.ChronoField;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -33,6 +35,7 @@ public class PluginFacadeImpl implements PluginFacade, ResultListenerNotifier {
 	private boolean isLocked;
 	private boolean isValidationDone;
 	private List<ValidationResult> validationResults, behaviourChangedMutants;
+	private Path tempDir;
 
 	public PluginFacadeImpl(TestMutationAgent mutationAgent) {
 		this.mutationAgent = mutationAgent;
@@ -55,7 +58,6 @@ public class PluginFacadeImpl implements PluginFacade, ResultListenerNotifier {
 	public void generatePdfAnalysisReport() throws Exception {
 		if (ask("Do you want to generate analysis report?")) {
 			ViewUtils.showViewMainPanel();
-
 			if (baselineResultTestMutationScore == null) {
 				info("You must fix a baseline to proceed!");
 			} else {
@@ -65,19 +67,27 @@ public class PluginFacadeImpl implements PluginFacade, ResultListenerNotifier {
 					if (!isValidationDone) {
 						info("You must validate refactoring before generate report");
 					}	else {
-						Path tempDir;
 						String filePath = "";
 						
 						try {
 							ValidatorUtils validatorUtils = new ValidatorUtils();
-							tempDir = Files.createTempDirectory("meteor_reports");
 							
-							filePath = tempDir.resolve("mutation_test_report.csv").toString();							
+							if(tempDir == null)
+								tempDir = Files.createTempDirectory("");// ("meteor_reports");
+												
+							LocalDateTime now = LocalDateTime.now();
+				            String reportName = String.format("mutation_test_report_%d%02d%02d%02d%02d%02d%03d.csv",
+				                now.getYear(), now.getMonthValue(), now.getDayOfMonth(),
+				                now.getHour(), now.getMinute(), now.getSecond(), now.get(ChronoField.MILLI_OF_SECOND));
+				            
+				            filePath = tempDir.resolve(reportName).toString();		
 							validatorUtils.generateCSV(validationResults, filePath);
 							
 							if(ask("Analysis report generated successfully in path: \n\n" + filePath + "\n\n Do you want to open the report?")) {
 								FileUtils.openFileInEclipse(filePath);
 							}
+							
+							ViewUtils.changeResult(refactoringSession, null, filePath);
 							
 						} catch (Exception e) {
 							if (filePath != "")								
@@ -112,7 +122,7 @@ public class PluginFacadeImpl implements PluginFacade, ResultListenerNotifier {
 
 					if (behaviourChangedMutants.size() > 0) {
 						ViewUtils.changeResult(refactoringSession,
-								"Refactoring unsuccessfull (" + behaviourChangedMutants.size() + ") changes.");
+								"Refactoring unsuccessfull (" + behaviourChangedMutants.size() + ") changes.", null);
 
 						Log.getLogger().info("________________________BEHAVIOUR CHANGES____________________________");
 						behaviourChangedMutants.forEach(i -> {
@@ -120,7 +130,7 @@ public class PluginFacadeImpl implements PluginFacade, ResultListenerNotifier {
 						});
 
 					} else {
-						ViewUtils.changeResult(refactoringSession, "Refactoring successfull.");
+						ViewUtils.changeResult(refactoringSession, "Refactoring successfull.", null);
 					}
 					
 					isValidationDone = true;
@@ -142,7 +152,7 @@ public class PluginFacadeImpl implements PluginFacade, ResultListenerNotifier {
 				mutationAgent.setLastResults(null);
 				lastResultTestMutationScore = null;
 				validationResults = null;
-				ViewUtils.changeResult(refactoringSession, "");
+				ViewUtils.changeResult(refactoringSession, "", null);
 			}
 			isValidationDone = false;
 
@@ -167,7 +177,7 @@ public class PluginFacadeImpl implements PluginFacade, ResultListenerNotifier {
 				ViewUtils.showViewMainPanel();
 				refactoringSession = ViewUtils.addNewSession();
 				
-				if(refactoringSession != -1 && ask("Do you want to reuse last run result as baseline for this new refactoring session?")){
+				if(refactoringSession > 1 && ask("Do you want to reuse last run result as baseline for this new refactoring session?")){
 					baselineResultTestMutationScore = lastResultTestMutationScore;			
 					ViewUtils.changeBaselineTestMutationScore(refactoringSession, baselineResultTestMutationScore);
 					mutationAgent.generateBaseline();
