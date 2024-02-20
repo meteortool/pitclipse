@@ -43,6 +43,8 @@ import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.commands.ICommandService;
 import org.eclipse.ui.part.ViewPart;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 import meteor.eclipse.plugin.core.Activator;
 
 public class View extends ViewPart {
@@ -62,6 +64,11 @@ public class View extends ViewPart {
 	public void clearItems() {
 		items.clear();
 		treeViewer.refresh();
+	}
+	
+	public void setTreeViewItems(List<Item> items) {
+		this.items = items;
+		this.treeViewer.setInput(this.items);
 	}
 
 	@Override
@@ -121,7 +128,7 @@ public class View extends ViewPart {
 
 		// Adiciona um botão de exportação à barra de ferramentas
 		exportItem = new ToolItem(toolbar, SWT.PUSH);
-		exportItem.setToolTipText("Exportar");
+		exportItem.setToolTipText("Export refactoring data");
 		ImageDescriptor exportImageDescriptor = PlatformUI.getWorkbench().getSharedImages()
 				.getImageDescriptor(ISharedImages.IMG_ETOOL_SAVE_EDIT);
 		exportItem.setImage(exportImageDescriptor.createImage());
@@ -130,22 +137,30 @@ public class View extends ViewPart {
 		exportItem.addSelectionListener(new SelectionAdapter() {
 			@Override
 			public void widgetSelected(SelectionEvent e) {
-				// Implemente a lógica para exportar aqui
-				System.out.println("Exportar botão clicado!");
+		        ICommandService commandService = PlatformUI.getWorkbench().getService(ICommandService.class);
+		        try {
+					commandService.getCommand("meteor.eclipse.plugin.core.command.export").executeWithChecks(new ExecutionEvent());
+				} catch (ExecutionException | NotHandledException | NotDefinedException | NotEnabledException e1) {
+					throw new RuntimeException(e1);
+				}
 			}
 		});
 
 		// Adiciona um botão de importação à barra de ferramentas
 		ToolItem importItem = new ToolItem(toolbar, SWT.PUSH);
-		importItem.setToolTipText("Importar");
+		importItem.setToolTipText("Import refactoring data");
 		ImageDescriptor importImageDescriptor = PlatformUI.getWorkbench().getSharedImages()
 				.getImageDescriptor(ISharedImages.IMG_OBJ_FOLDER);
 		importItem.setImage(importImageDescriptor.createImage());
 		importItem.addSelectionListener(new SelectionAdapter() {
 			@Override
 			public void widgetSelected(SelectionEvent e) {
-				// Implemente a lógica para importar aqui
-				System.out.println("Importar botão clicado!");
+		        ICommandService commandService = PlatformUI.getWorkbench().getService(ICommandService.class);
+		        try {
+					commandService.getCommand("meteor.eclipse.plugin.core.command.import").executeWithChecks(new ExecutionEvent());
+				} catch (ExecutionException | NotHandledException | NotDefinedException | NotEnabledException e1) {
+					throw new RuntimeException(e1);
+				}
 			}
 		});
 
@@ -477,16 +492,21 @@ public class View extends ViewPart {
 		private String key;
 		private String value;
 		private String iconPath;
+		@JsonIgnore
 		private Item parent;
 		private String report;
 		private List<Item> children;
+		
+		public Item() {
+			this.children = new ArrayList<>();
+		}
 
 		public Item(String key, String value, String iconPath) {
+			this();
 			this.key = key;
 			this.value = value;
 			this.iconPath = iconPath;
 			this.parent = null;
-			this.children = new ArrayList<>();
 		}
 
 		public String getKey() {

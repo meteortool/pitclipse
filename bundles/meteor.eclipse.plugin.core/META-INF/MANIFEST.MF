@@ -5,6 +5,10 @@ Bundle-SymbolicName: meteor.eclipse.plugin.core;singleton:=true
 Bundle-Vendor: Tiago Samuel Rodrigues Teixeira
 Bundle-Version: 1.0.0.qualifier
 Bundle-Activator: meteor.eclipse.plugin.core.Activator
+Bundle-ClassPath: lib/jackson-annotations-2.16.1.jar,
+ lib/jackson-core-2.16.1.jar,
+ lib/jackson-databind-2.16.1.jar,
+ .
 Require-Bundle: org.eclipse.ui;bundle-version="[3.11.1,4.0.0)",
  org.eclipse.core.runtime;bundle-version="[3.11.1,4.0.0)",
  org.eclipse.jdt.core;bundle-version="[3.11.1,4.0.0)",

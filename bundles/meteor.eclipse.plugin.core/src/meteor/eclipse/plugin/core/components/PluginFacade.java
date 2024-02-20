@@ -20,9 +20,13 @@ public interface PluginFacade {
 	
 	void unlock();
 	
-	void reset() throws Exception;
+	void reset(Boolean skipConfirmation) throws Exception;
 	
 	void setSelectedResource(ISelection resource) throws Exception;
+	
+	void exportData() throws Exception;
+	
+	void importData() throws Exception;
 	
 	ISelection getSelectedResource();
 	

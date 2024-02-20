@@ -42,6 +42,16 @@
 	</extension>
 	<extension
 		point="org.eclipse.ui.commands">
+  <command
+        defaultHandler="meteor.eclipse.plugin.core.handler.ExportDataHandler"
+        id="meteor.eclipse.plugin.core.command.export"
+        name="&amp;Export">
+  </command>
+  <command
+        defaultHandler="meteor.eclipse.plugin.core.handler.ImportDataHandler"
+        id="meteor.eclipse.plugin.core.command.import"
+        name="&amp;Import">
+  </command>
 		<command
         defaultHandler="meteor.eclipse.plugin.core.handler.ViewMainPanelHandler"
         id="meteor.eclipse.plugin.core.command.viewmainpanel"
@@ -85,22 +95,37 @@
 		<command
         defaultHandler="meteor.eclipse.plugin.core.handler.AboutHandler"
         id="meteor.eclipse.plugin.core.command.about"
-        name="About">
-		</command>	
+        name="&amp;About">
+		</command>
 	</extension>
 	<extension
 		point="org.eclipse.ui.menus">
 		<menuContribution
 			locationURI="menu:org.eclipse.ui.main.menu">
 			<menu
-				label="Meteor">
-				<command
-					commandId="meteor.eclipse.plugin.core.command.viewmainpanel"
-					label="&amp;View Meteor panel"
-					icon="icons/meteorlogo16.png">
-				</command>
+         icon="icons/meteorlogo16.png"
+         label="Meteor">
+      <command
+            commandId="meteor.eclipse.plugin.core.command.viewmainpanel"
+            icon="icons/meteorlogo16.png"
+            label="&amp;View Meteor panel">
+      </command>
+      <separator
+            name="meteor.eclipse.plugin.core.separator0"
+            visible="true">
+      </separator>
+      <command
+            commandId="meteor.eclipse.plugin.core.command.export"
+            icon="platform:/plugin/org.eclipse.ui/icons/full/etool16/save_edit.png"
+            label="&amp;Export refactoring data">
+      </command>
+      <command
+            commandId="meteor.eclipse.plugin.core.command.import"
+            icon="platform:/plugin/org.eclipse.mylyn.commons.repositories.ui/icons/obj16/folder.gif"
+            label="&amp;Import refactoring data">
+      </command>
 				<separator
-					name="meteor.eclipse.plugin.core.separator0" visible="true">
+					name="meteor.eclipse.plugin.core.separator1" visible="true">
 				</separator>
 				<command
 					commandId="meteor.eclipse.plugin.core.command.setpitentrypoint"
@@ -108,7 +133,7 @@
 					icon="icons/meteorpin16.png">
 				</command>
 				<separator
-					name="meteor.eclipse.plugin.core.separator1" visible="true">
+					name="meteor.eclipse.plugin.core.separator2" visible="true">
 				</separator>
 				<command
 					commandId="meteor.eclipse.plugin.core.command.createrefactoringsession"
@@ -116,7 +141,7 @@
 					icon="platform:/plugin/org.eclipse.ui/icons/full/etool16/editor_area.png">
 				</command>
 				<separator
-					name="meteor.eclipse.plugin.core.separator4" visible="true">
+					name="meteor.eclipse.plugin.core.separator3" visible="true">
 				</separator>		
 				<command
 					commandId="meteor.eclipse.plugin.core.command.runmutationtests"
@@ -134,7 +159,7 @@
 					icon="icons/meteorvalidate16.png">
 				</command>
 				<separator
-					name="meteor.eclipse.plugin.core.separator2"
+					name="meteor.eclipse.plugin.core.separator4"
 					visible="true">
 				</separator>
 				<command
@@ -148,14 +173,100 @@
 					icon="platform:/plugin/org.eclipse.ui/icons/full/etool16/print_edit.png">
 				</command>
 				<separator
-					name="meteor.eclipse.plugin.core.separator3"
+					name="meteor.eclipse.plugin.core.separator5"
 					visible="true">
 				</separator>
 				<command
 					commandId="meteor.eclipse.plugin.core.command.about"
 					icon="icons/meteorlogo16.png"
-					label="About">
+					label="&amp;About">
 				</command>
+			</menu>
+		</menuContribution>
+		<menuContribution
+			locationURI="popup:org.eclipse.ui.popup.any">
+			<menu
+				label="Meteor"
+				icon="icons/meteorlogo16.png">
+      <command
+            commandId="meteor.eclipse.plugin.core.command.viewmainpanel"
+            icon="icons/meteorlogo16.png"
+            label="&amp;View Meteor panel">
+      </command>
+      <separator
+            name="meteor.eclipse.plugin.core.separator0"
+            visible="true">
+      </separator>
+      <command
+            commandId="meteor.eclipse.plugin.core.command.export"
+            icon="platform:/plugin/org.eclipse.ui/icons/full/etool16/save_edit.png"
+            label="&amp;Export refactoring data">
+      </command>
+      <command
+            commandId="meteor.eclipse.plugin.core.command.import"
+            icon="platform:/plugin/org.eclipse.mylyn.commons.repositories.ui/icons/obj16/folder.gif"
+            label="&amp;Import refactoring data">
+      </command>
+      <separator
+            name="meteor.eclipse.plugin.core.separator1"
+            visible="true">
+      </separator>
+      <command
+            commandId="meteor.eclipse.plugin.core.command.setpitentrypoint"
+            icon="icons/meteorpin16.png"
+            label="[1] Set project entry point for test">
+      </command>
+      <separator
+            name="meteor.eclipse.plugin.core.separator2"
+            visible="true">
+      </separator>
+      <command
+            commandId="meteor.eclipse.plugin.core.command.createrefactoringsession"
+            icon="platform:/plugin/org.eclipse.ui/icons/full/etool16/editor_area.png"
+            label="[2] &amp;Create refatoring session">
+      </command>
+      <separator
+            name="meteor.eclipse.plugin.core.separator3"
+            visible="true">
+      </separator>
+      <command
+            commandId="meteor.eclipse.plugin.core.command.runmutationtests"
+            icon="icons/meteortest16.png"
+            label="[3] &amp;Run mutation tests">
+      </command>
+      <command
+            commandId="meteor.eclipse.plugin.core.command.generatebaseline"
+            icon="icons/meteorpinbl.png"
+            label="[4] &amp;Set last run results as baseline">
+      </command>
+      <command
+            commandId="meteor.eclipse.plugin.core.command.validaterefactoring"
+            icon="icons/meteorvalidate16.png"
+            label="[5] &amp;Validate refactoring">
+      </command>
+      <separator
+            name="meteor.eclipse.plugin.core.separator4"
+            visible="true">
+      </separator>
+      <command
+            commandId="meteor.eclipse.plugin.core.command.reset"
+            icon="icons/meteorclear16.png"
+            label="&amp;Clean all results">
+      </command>
+      <command
+            commandId="meteor.eclipse.plugin.core.command.printvalidation"
+            icon="platform:/plugin/org.eclipse.ui/icons/full/etool16/print_edit.png"
+            label="&amp;Print validation results">
+      </command>
+      <separator
+            name="meteor.eclipse.plugin.core.separator5"
+            visible="true">
+      </separator>
+      <command
+            commandId="meteor.eclipse.plugin.core.command.about"
+            icon="icons/meteorlogo16.png"
+            label="&amp;About">
+      </command>
 			</menu>
 		</menuContribution>
 	</extension>

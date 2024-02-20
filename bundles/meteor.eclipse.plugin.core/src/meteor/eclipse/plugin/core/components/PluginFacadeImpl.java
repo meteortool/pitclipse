@@ -177,17 +177,20 @@ public class PluginFacadeImpl implements PluginFacade, ResultListenerNotifier {
 				ViewUtils.showViewMainPanel();
 				refactoringSession = ViewUtils.addNewSession();
 				
-				if(refactoringSession > 1 && ask("Do you want to reuse last run result as baseline for this new refactoring session?")){
+				if(refactoringSession > 1 
+						&& lastResultTestMutationScore != null 
+						&& validationResults != null
+						&& ask("Do you want to reuse last run result as baseline for this new refactoring session?")){
 					baselineResultTestMutationScore = lastResultTestMutationScore;			
 					ViewUtils.changeBaselineTestMutationScore(refactoringSession, baselineResultTestMutationScore);
 					mutationAgent.generateBaseline();
 				} else {
-					isValidationDone = false;
-					validationResults = null;				
 					baselineResultTestMutationScore = null;
 					mutationAgent.clearBaseline();
 				}
 				
+				isValidationDone = false;
+				validationResults = null;			
 				mutationAgent.setLastResults(null);
 				lastResultTestMutationScore = null;						
 			}			
@@ -257,8 +260,8 @@ public class PluginFacadeImpl implements PluginFacade, ResultListenerNotifier {
 	}
 
 	@Override
-	public void reset() throws Exception {
-		if (ask("Do you want to delete all the previous refactoring results?")) {
+	public void reset(Boolean skipConfirmation) throws Exception {
+		if (skipConfirmation || (!skipConfirmation && ask("Do you want to delete all the previous refactoring results?"))) {
 			ViewUtils.showViewMainPanel();
 			ViewUtils.clear();
 
@@ -268,6 +271,36 @@ public class PluginFacadeImpl implements PluginFacade, ResultListenerNotifier {
 			baselineResultTestMutationScore = null;
 			lastResultTestMutationScore = null;
 			refactoringSession = -1;
+		}
+	}
+
+	@Override
+	public void exportData() throws Exception {
+		if (ask("Confirm export refactoring sessions?")) {
+			ViewUtils.showViewMainPanel();
+			ViewUtils.exportRefactoringSessions();
+		}
+	}
+
+	@Override
+	public void importData() throws Exception {
+		ViewUtils.showViewMainPanel();
+		if (ask("All your not saved data will be lost! Confirm loading refactoring sessions?")) {	
+			ViewUtils.importRefactoringSessions((refactoringSession, baselineMutationScore, lastResultMutationScore, result) -> {
+				try {
+					reset(true);
+					if (refactoringSession != null)
+						this.refactoringSession = refactoringSession;
+					if (baselineMutationScore != null)
+						this.baselineResultTestMutationScore = baselineMutationScore;
+					if (lastResultMutationScore != null)
+						this.lastResultTestMutationScore = lastResultMutationScore;
+					if (result != null && result != "")
+						this.isValidationDone = true;
+				} catch (Exception e) {
+					error("Error on reset current view!");
+				}
+			});
 		}
 	}
 
