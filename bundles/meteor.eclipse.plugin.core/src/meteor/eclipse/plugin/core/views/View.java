@@ -150,7 +150,7 @@ public class View extends ViewPart {
 		ToolItem importItem = new ToolItem(toolbar, SWT.PUSH);
 		importItem.setToolTipText("Import refactoring data");
 		ImageDescriptor importImageDescriptor = PlatformUI.getWorkbench().getSharedImages()
-				.getImageDescriptor(ISharedImages.IMG_OBJ_FOLDER);
+				.getImageDescriptor(ISharedImages.IMG_OBJ_FILE);
 		importItem.setImage(importImageDescriptor.createImage());
 		importItem.addSelectionListener(new SelectionAdapter() {
 			@Override

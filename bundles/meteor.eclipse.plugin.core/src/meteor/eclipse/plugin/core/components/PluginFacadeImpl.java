@@ -147,7 +147,12 @@ public class PluginFacadeImpl implements PluginFacade, ResultListenerNotifier {
 	public void runMutationTests() throws Exception {
 		if (ask("Do you want to run mutation tests? This process can take some minutes.")) {
 			ViewUtils.showViewMainPanel();
-			if (isValidationDone) {
+			if (isValidationDone) {			
+				if (validationResults == null  || validationResults.size() == 0) {
+					error("You have imported a JSON file and you need to create a new refactoring session before run mutation testing!");
+					return;
+				}
+				
 				info("This refactory session was validated before. So the last validation results will be clear, you must validate again after run mutation test.");
 				mutationAgent.setLastResults(null);
 				lastResultTestMutationScore = null;

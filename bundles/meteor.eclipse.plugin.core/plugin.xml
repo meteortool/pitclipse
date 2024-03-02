@@ -121,7 +121,7 @@
       </command>
       <command
             commandId="meteor.eclipse.plugin.core.command.import"
-            icon="platform:/plugin/org.eclipse.mylyn.commons.repositories.ui/icons/obj16/folder.gif"
+            icon="platform:/plugin/org.eclipse.ui/icons/full/obj16/file_obj.png"
             label="&amp;Import refactoring data">
       </command>
 				<separator
@@ -204,7 +204,7 @@
       </command>
       <command
             commandId="meteor.eclipse.plugin.core.command.import"
-            icon="platform:/plugin/org.eclipse.mylyn.commons.repositories.ui/icons/obj16/folder.gif"
+            icon="platform:/plugin/org.eclipse.ui/icons/full/obj16/file_obj.png"
             label="&amp;Import refactoring data">
       </command>
       <separator
