@@ -1,86 +1,151 @@
 package meteor.eclipse.plugin.core.components.helpers;
 
+import static org.pitest.pitclipse.runner.results.DetectionStatus.KILLED;
+import static org.pitest.pitclipse.runner.results.DetectionStatus.NO_COVERAGE;
+import static org.pitest.pitclipse.runner.results.DetectionStatus.SURVIVED;
+
 import java.io.BufferedWriter;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.pitest.pitclipse.runner.results.DetectionStatus;
 import org.pitest.util.Log;
 
 import meteor.eclipse.plugin.core.components.mutation.tests.ResultEntry;
+import meteor.eclipse.plugin.core.tuples.Tuple2;
+import meteor.eclipse.plugin.core.tuples.Tuple3;
 
 public class ValidatorUtils {
 
-
 	public class ValidationResult {
-	    private int lineOfCode;
-	    private String description;
-	    private String previousDetectionStatus;
-	    private String afterDetectionStatus;
-	    private boolean changedBehaviour;
+		
+		private int lineOfCode;
+		private String description;
+		private String killingTest;
+		private String className;
+		private String methodName;
+		private String mutator;
+		private String previousDetectionStatus;
+		private String afterDetectionStatus;
+		private String sourceFile;
+		private boolean changedBehaviour;
 
-	    public ValidationResult(int lineOfCode, String description, String previousDetectionStatus, String afterDetectionStatus, boolean changedBehaviour) {
-	        this.lineOfCode = lineOfCode;
-	        this.description = description;
-	        this.previousDetectionStatus = previousDetectionStatus;
-	        this.afterDetectionStatus = afterDetectionStatus;
-	        this.changedBehaviour = changedBehaviour;
-	    }
+		public ValidationResult(int lineOfCode, 
+								String description,
+								String killingTest,
+								String className, 
+								String methodName, 
+								String mutator,
+								String previousDetectionStatus, 
+								String afterDetectionStatus, 
+								String sourceFile,
+								boolean changedBehaviour) {
+			this.lineOfCode = lineOfCode;
+			this.description = description;
+			this.killingTest = killingTest;
+			this.className = className;
+			this.methodName = methodName;
+			this.mutator = mutator;
+			this.previousDetectionStatus = previousDetectionStatus;
+			this.afterDetectionStatus = afterDetectionStatus;
+			this.sourceFile = sourceFile;
+			this.changedBehaviour = changedBehaviour;
+		}
+		
+		public int getLineOfCode() {
+			return lineOfCode;
+		}
 
-	    public int getLineOfCode() {
-	        return lineOfCode;
-	    }
+		public void setLineOfCode(int lineOfCode) {
+			this.lineOfCode = lineOfCode;
+		}
 
-	    public void setLineOfCode(int lineOfCode) {
-	        this.lineOfCode = lineOfCode;
-	    }
+		public String getDescription() {
+			return description;
+		}
 
-	    public String getDescription() {
-	        return description;
-	    }
+		public void setDescription(String description) {
+			this.description = description;
+		}
 
-	    public void setDescription(String description) {
-	        this.description = description;
-	    }
+		public String getKillingTest() {
+			return killingTest;
+		}
 
-	    public String getPreviousDetectionStatus() {
-	        return previousDetectionStatus;
-	    }
+		public void setKillingTest(String killingTest) {
+			this.killingTest = killingTest;
+		}
 
-	    public void setPreviousDetectionStatus(String previousDetectionStatus) {
-	        this.previousDetectionStatus = previousDetectionStatus;
-	    }
+		public String getClassName() {
+			return className;
+		}
 
-	    public String getAfterDetectionStatus() {
-	        return afterDetectionStatus;
-	    }
+		public void setClassName(String className) {
+			this.className = className;
+		}
 
-	    public void setAfterDetectionStatus(String afterDetectionStatus) {
-	        this.afterDetectionStatus = afterDetectionStatus;
-	    }
+		public String getMethodName() {
+			return methodName;
+		}
 
-	    public boolean isChangedBehaviour() {
-	        return changedBehaviour;
-	    }
+		public void setMethodName(String methodName) {
+			this.methodName = methodName;
+		}
 
-	    public void setChangedBehaviour(boolean changedBehaviour) {
-	        this.changedBehaviour = changedBehaviour;
-	    }
+		public String getMutator() {
+			return mutator;
+		}
 
-	    @Override
-	    public String toString() {
-	        return "ValidationResult{" +
-	                "lineOfCode=" + lineOfCode +
-	                ", description='" + description + '\'' +
-	                ", previousDetectionStatus='" + previousDetectionStatus + '\'' +
-	                ", afterDetectionStatus='" + afterDetectionStatus + '\'' +
-	                ", changedBehaviour=" + changedBehaviour +
-	                '}';
-	    }
+		public void setMutator(String mutator) {
+			this.mutator = mutator;
+		}
+
+		public String getPreviousDetectionStatus() {
+			return previousDetectionStatus;
+		}
+
+		public void setPreviousDetectionStatus(String previousDetectionStatus) {
+			this.previousDetectionStatus = previousDetectionStatus;
+		}
+
+		public String getAfterDetectionStatus() {
+			return afterDetectionStatus;
+		}
+
+		public void setAfterDetectionStatus(String afterDetectionStatus) {
+			this.afterDetectionStatus = afterDetectionStatus;
+		}
+
+		public String getSourceFile() {
+			return sourceFile;
+		}
+
+		public void setSourceFile(String sourceFile) {
+			this.sourceFile = sourceFile;
+		}
+
+		public boolean isChangedBehaviour() {
+			return changedBehaviour;
+		}
+
+		public void setChangedBehaviour(boolean changedBehaviour) {
+			this.changedBehaviour = changedBehaviour;
+		}
+
+		@Override
+		public String toString() {
+			return "ValidationResult [lineOfCode=" + lineOfCode + ", description=" + description + ", killingTest="
+					+ killingTest + ", className=" + className + ", methodName=" + methodName + ", mutator=" + mutator
+					+ ", previousDetectionStatus=" + previousDetectionStatus + ", afterDetectionStatus="
+					+ afterDetectionStatus + ", sourceFile=" + sourceFile + ", changedBehaviour=" + changedBehaviour
+					+ "]";
+		}
+
 	}
 
-	public List<ValidationResult> validateMutations(List<ResultEntry> baselineResults,
+	public Tuple3<List<ValidationResult>, Boolean, Boolean> validateMutations(List<ResultEntry> baselineResults,
 			List<ResultEntry> lastRunResults) {
 
 		Log.getLogger().info("________________BASELINE______________");
@@ -92,169 +157,64 @@ public class ValidatorUtils {
 		lastRunResults.forEach(i -> {
 			Log.getLogger().info(i.toString());
 		});
-
+	
 		return compareResults(baselineResults, lastRunResults);
 
 	}
 	
-	/*public void generatePdfReport(List<ValidationResult> validationResults, String pdfFilePath) {
-	    try (PDDocument document = new PDDocument()) {
-	        PDPage page = new PDPage();
-	        document.addPage(page);
+	public void generateCSV(List<ValidationResult> validationResults, String filePath) {
+		try (FileWriter writer = new FileWriter(filePath)) {
+			writer.append(
+					"Line of Code, "
+					+ "Class Name, "
+					+ "Method Name, "
+					+ "Mutator, "
+					+ "Description, "
+					+ "Killing Test, "
+					+ "Previous Detection Status, "
+					+ "After Detection Status, "
+					+ "Changed Behaviour, "
+					+ "Source File\n");
+			for (ValidationResult result : validationResults) {
+				writer.append(result.getLineOfCode() + ",");
+				writer.append(result.getClassName() + ",");
+				writer.append(result.getMethodName() + ",");
+				writer.append(result.getMutator() + ",");
+				writer.append("\"" + result.getDescription() + "\",");
+				writer.append("\"" + result.getKillingTest() + "\",");
+				writer.append(result.getPreviousDetectionStatus() + ",");
+				writer.append(result.getAfterDetectionStatus() + ",");
+				writer.append(result.isChangedBehaviour() + ",");
+				writer.append(result.getSourceFile() + "\n");
+			}
 
-	        try (PDPageContentStream contentStream = new PDPageContentStream(document, page)) {
-	            contentStream.setFont(new PDType1Font(FontName.HELVETICA_BOLD), 12);
-	            contentStream.beginText();
-	            contentStream.newLineAtOffset(20, 750);
-	            contentStream.showText("Mutation Test Results Analysis");
-	            contentStream.endText();
-
-	            contentStream.setFont(new PDType1Font(FontName.HELVETICA), 10);
-	            contentStream.setLeading(14.5f); // Define o espaçamento entre linhas
-	            contentStream.beginText();
-	            contentStream.newLineAtOffset(20, 730);
-
-	            for (ValidationResult result : validationResults) {
-	                contentStream.showText(result.toString());
-	                contentStream.newLine();
-	            }
-
-	            contentStream.endText();	    
-	        } 
-	        
-	        document.save(pdfFilePath);
-            Log.getLogger().info("PDF report generated successfully: " + pdfFilePath);
-
-	    } catch (IOException e) {
-	    	Log.getLogger().severe(e.getMessage());
-	    	Log.getLogger().severe(e.getStackTrace().toString());
-	    	throw new RuntimeException(e);
-	    }
-	}*/
-	
-   public void generateCSV(List<ValidationResult> validationResults, String filePath) {
-        try (FileWriter writer = new FileWriter(filePath)) {
-            writer.append("Line of Code,Description,Previous Detection Status,After Detection Status,Changed Behaviour\n");
-            for (ValidationResult result : validationResults) {
-                writer.append(result.getLineOfCode() + ",");
-                writer.append("\"" + result.getDescription() + "\",");
-                writer.append(result.getPreviousDetectionStatus() + ",");
-                writer.append(result.getAfterDetectionStatus() + ",");
-                writer.append(result.isChangedBehaviour() + "\n");
-            }
-            
-            Log.getLogger().info("PDF report generated successfully: " + filePath);
-        } catch (IOException e) {
-        	Log.getLogger().severe(e.getMessage());
-	        Log.getLogger().severe(e.getStackTrace().toString());
-	        throw new RuntimeException(e);
-        }
-    }
-   
-   
-	/*public void generatePdfReport(List<ValidationResult> validationResults, String pdfFilePath) {
-	    try (PDDocument document = new PDDocument()) {
-	        PDPage page = new PDPage();
-	        document.addPage(page);
-
-	        try (PDPageContentStream contentStream = new PDPageContentStream(document, page)) {
-	            contentStream.setFont(new PDType1Font(FontName.HELVETICA), 12);
-	            contentStream.beginText();
-	            contentStream.newLineAtOffset(20, 750);
-	            contentStream.showText("Mutation Test Results Analysis");
-	            contentStream.endText();
-
-	            float margin = 50;
-	            float yStart = 700;
-	            float tableWidth = page.getMediaBox().getWidth() - 2 * margin;
-	            int rows = validationResults.size();
-	            float rowHeight = 20;
-	            float tableHeight = rowHeight * rows;
-
-	            drawTable(document, contentStream, page, yStart, tableWidth, margin, yStart, rowHeight, tableHeight, validationResults);
-	        }
-
-	        document.save(pdfFilePath);
-	        Log.getLogger().info("PDF report generated successfully: " + pdfFilePath);
-
-	    } catch (IOException e) {
-	        Log.getLogger().severe(e.getMessage());
-	        Log.getLogger().severe(e.getStackTrace().toString());
-	        throw new RuntimeException(e);
-	    }
-	}
-
-	private void drawTable(PDDocument document, PDPageContentStream contentStream, PDPage page, float yStart, float tableWidth, float margin, float yPosition, float rowHeight, float tableHeight, List<ValidationResult> validationResults) throws IOException {
-	    float fontSize = 10;
-	    PDType1Font font = new PDType1Font(FontName.HELVETICA);
-
-	    float xStart = margin;
-	    float columnWidth = (tableWidth - 2 * margin) / 5; // Dividindo em 5 colunas
-
-	    drawRow(contentStream, yPosition, xStart, tableWidth, rowHeight, fontSize, font, "Line of Code", "Description", "Previous Detection Status", "After Detection Status", "Changed Behaviour");
-	    yPosition -= rowHeight;
-
-	    for (ValidationResult result : validationResults) {
-	        float cellHeight = calculateCellHeight(result.getDescription(), fontSize, font, columnWidth);
-	        if (yPosition - cellHeight < 50) { // Verifica se há espaço suficiente na página atual
-	            contentStream.close();
-	            document.addPage(page);
-	            contentStream = new PDPageContentStream(document, page);
-	            drawRow(contentStream, 750, xStart, tableWidth, rowHeight, fontSize, font, "Line of Code", "Description", "Previous Detection Status", "After Detection Status", "Changed Behaviour");
-	            yPosition = 700 - rowHeight; // Reinicia a posição para a próxima página
-	        }
-	        drawRow(contentStream, yPosition, xStart, tableWidth, cellHeight, fontSize, font, String.valueOf(result.getLineOfCode()), result.getDescription(), result.getPreviousDetectionStatus(), result.getAfterDetectionStatus(), String.valueOf(result.isChangedBehaviour()));
-	        yPosition -= cellHeight;
-	    }
-
-	    contentStream.close();
-	}
-
-	private void drawRow(PDPageContentStream contentStream, float y, float xStart, float tableWidth, float rowHeight, float fontSize, PDType1Font font, String... content) throws IOException {
-	    float x = xStart;
-	    boolean isHeader = (y == 700); // Verifica se é a linha do cabeçalho
-	    boolean isRed = false;
-	    if (!isHeader) {
-	        isRed = content[4].equals("false"); // Verifica se "Changed Behaviour" é false
-	    }
-	    float cellHeight = calculateCellHeight(content[1], fontSize, font, tableWidth / 5); // Calcula a altura da célula "Description"
-	    for (String text : content) {
-	        drawCell(contentStream, x, y, tableWidth / 5, cellHeight, fontSize, font, text, isHeader, isRed);
-	        x += tableWidth / 5;
-	    }
+			Log.getLogger().info("CSV report generated successfully: " + filePath);
+		} catch (IOException e) {
+			Log.getLogger().severe(e.getMessage());
+			Log.getLogger().severe(e.getStackTrace().toString());
+			throw new RuntimeException(e);
+		}
 	}
 	
-	private void drawCell(PDPageContentStream contentStream, float x, float y, float width, float height, float fontSize, PDType1Font font, String text, boolean bold, boolean red) throws IOException {
-	    contentStream.setFont(font, fontSize);
-	    if (bold) {
-	        contentStream.setFont(new PDType1Font(FontName.HELVETICA), fontSize); // Fonte em negrito para o cabeçalho
-	    }
-	    if (red) {
-	        contentStream.setNonStrokingColor(Color.RED); // Texto em vermelho se "Changed Behaviour" for false
-	    }
-	    contentStream.beginText();
-	    contentStream.newLineAtOffset(x, y - height);
-	    contentStream.showText(text);
-	    contentStream.endText();
-	    contentStream.setNonStrokingColor(Color.BLACK); // Restaura a cor padrão
-	    contentStream.addRect(x, y - height, width, height);
-	    contentStream.stroke();
+	public boolean checkIsNonDefaultResultValidation(ResultEntry entry1, ResultEntry entry2) {
+		return (!DetectionStatus.fromValue(entry1.getDetectionStatus()).equals(KILLED)|| 
+				!DetectionStatus.fromValue(entry1.getDetectionStatus()).equals(SURVIVED) ||
+				!DetectionStatus.fromValue(entry1.getDetectionStatus()).equals(NO_COVERAGE) &&
+				DetectionStatus.fromValue(entry2.getDetectionStatus()).equals(KILLED)|| 
+				DetectionStatus.fromValue(entry2.getDetectionStatus()).equals(SURVIVED) ||
+				DetectionStatus.fromValue(entry2.getDetectionStatus()).equals(NO_COVERAGE));		
+	}
+	
+	public boolean checkIsNonDefaultResult(ResultEntry entry1, ResultEntry entry2) {
+		return checkIsNonDefaultResultValidation(entry1, entry2) ||
+				checkIsNonDefaultResultValidation(entry2, entry1);
 	}
 
-	private float calculateCellHeight(String text, float fontSize, PDType1Font font, float cellWidth) throws IOException {
-	    float textWidth = font.getStringWidth(text) / 1000 * fontSize;
-	    float cellHeight = (textWidth / cellWidth) * fontSize; // Calcula a altura com base no tamanho do texto e largura da célula
-	    return cellHeight;
-	}*/
-
-	/*
-	 * public static String getMutantIdentification(ResultEntry entry) { return
-	 * entry.getMutatedClass() + "::" + entry.getMutatedMethod() + "::" +
-	 * entry.getMutator(); }
-	 */
-
-	public List<ValidationResult> compareResults(List<ResultEntry> baselineResults, List<ResultEntry> lastRunResults) {
+	public Tuple3<List<ValidationResult>, Boolean, Boolean> compareResults(List<ResultEntry> baselineResults,
+			List<ResultEntry> lastRunResults) {
+		Tuple3<List<ValidationResult>, Boolean, Boolean> result;
 		List<ValidationResult> validationResults = new ArrayList<>();
+		boolean hasChangedBehaviour = false, hasNonDefaultResult = false;
 
 		// Iterate over the baselineResults list
 		for (ResultEntry baselineEntry : baselineResults) {
@@ -264,16 +224,24 @@ public class ValidatorUtils {
 
 			if (matchingEntry != null) {
 				validationResult = new ValidationResult(baselineEntry.getLineNumber(), baselineEntry.getDescription(),
+						baselineEntry.getKillingTest(), baselineEntry.getMutatedClass(),
+						baselineEntry.getMutatedMethod(), baselineEntry.getMutator(),
 						baselineEntry.getDetectionStatus(), matchingEntry.getDetectionStatus(),
-						!compareEntries(baselineEntry, matchingEntry));
+						matchingEntry.getSourceFile(), !compareEntries(baselineEntry, matchingEntry));
+
+				if (validationResult.isChangedBehaviour()) {
+					hasNonDefaultResult = checkIsNonDefaultResult(baselineEntry, matchingEntry);
+				}
 
 			} else {
 				validationResult = new ValidationResult(baselineEntry.getLineNumber(), baselineEntry.getDescription(),
-						baselineEntry.getDetectionStatus(), "NOT PRESENT IN LR", false);
+						baselineEntry.getKillingTest(), baselineEntry.getMutatedClass(),
+						baselineEntry.getMutatedMethod(), baselineEntry.getMutator(),
+						baselineEntry.getDetectionStatus(), "NOT PRESENT IN LR", baselineEntry.getSourceFile(), true);
 			}
 
 			if (validationResult.isChangedBehaviour()) {
-				System.out.println("Teste");
+				System.out.println("Change behaviour detected");
 			}
 
 			validationResults.add(validationResult);
@@ -288,24 +256,34 @@ public class ValidatorUtils {
 
 			if (matchingEntry != null) {
 				validationResult = new ValidationResult(lastRunResultsEntry.getLineNumber(),
-						lastRunResultsEntry.getDescription(), lastRunResultsEntry.getDetectionStatus(),
-						matchingEntry.getDetectionStatus(), !compareEntries(lastRunResultsEntry, matchingEntry));
+						lastRunResultsEntry.getDescription(), lastRunResultsEntry.getKillingTest(),
+						lastRunResultsEntry.getMutatedClass(), lastRunResultsEntry.getMutatedMethod(),
+						lastRunResultsEntry.getMutator(), lastRunResultsEntry.getDetectionStatus(),
+						matchingEntry.getDetectionStatus(), lastRunResultsEntry.getSourceFile(),
+						!compareEntries(lastRunResultsEntry, matchingEntry));
+
+				if (validationResult.isChangedBehaviour()) {
+					hasNonDefaultResult = checkIsNonDefaultResult(lastRunResultsEntry, matchingEntry);
+				}
 
 			} else {
 				validationResult = new ValidationResult(lastRunResultsEntry.getLineNumber(),
-						lastRunResultsEntry.getDescription(), lastRunResultsEntry.getDetectionStatus(),
-						"NOT PRESENT IN BLs", false);
+						lastRunResultsEntry.getDescription(), lastRunResultsEntry.getKillingTest(),
+						lastRunResultsEntry.getMutatedClass(), lastRunResultsEntry.getMutatedMethod(),
+						lastRunResultsEntry.getMutator(), lastRunResultsEntry.getDetectionStatus(), "NOT PRESENT IN BL",
+						lastRunResultsEntry.getSourceFile(), true);
 			}
 
 			if (validationResult.isChangedBehaviour()) {
-				System.out.println("Teste");
+				System.out.println("Change behaviour detected");
 			}
 
 			validationResults.add(validationResult);
-
 		}
 
-		return validationResults;
+		result = new Tuple3<List<ValidationResult>, Boolean, Boolean>(validationResults, hasChangedBehaviour,
+				hasNonDefaultResult);
+		return result;
 	}
 
 	private ResultEntry findMatchingEntry(ResultEntry targetEntry, List<ResultEntry> resultList) {
@@ -314,7 +292,7 @@ public class ValidatorUtils {
 			if (entriesMatch(targetEntry, entry)) {
 				return entry;
 			}
-		}
+		}		
 		return null; // No matching entry found
 	}
 
@@ -323,27 +301,33 @@ public class ValidatorUtils {
 		// Compare the necessary attributes to determine a match
 		// You can modify this logic based on the specific attributes that should match
 
-		return entry1.getDescription().equals(entry2.getDescription()) &&
-				entry1.getIndex().equals(entry2.getIndex())
-				&& entry1.getLineNumber() == entry2.getLineNumber();
-		/*
-		 * return entry1.getMutatedClass().equals(entry2.getMutatedClass()) &&
-		 * entry1.getMutatedMethod().equals(entry2.getMutatedMethod()) &&
-		 * entry1.getMutator().equals(entry2.getMutator()) && entry1.isDetected() ==
-		 * entry2.isDetected() &&
-		 * entry1.getKillingTest().equals(entry2.getKillingTest()) &&
-		 * entry1.getSourceFile().equals(entry2.getSourceFile()) &&
-		 * entry1.getLineNumber() == entry2.getLineNumber() && entry1.getIndex() ==
-		 * entry2.getIndex() && entry1.getDescription().equals(entry2.getDescription());
-		 */
-
+		/*return entry1.getDescription().equals(entry2.getDescription()) && 
+				entry1.getIndex().equals(entry2.getIndex()) && 
+				entry1.getLineNumber() == entry2.getLineNumber();*/
+		
+		 return entry1.getMutatedClass().equals(entry2.getMutatedClass()) &&
+				 entry1.getMutatedMethod().equals(entry2.getMutatedMethod()) &&
+				 entry1.getMutator().equals(entry2.getMutator()) && 
+				 entry1.getSourceFile().equals(entry2.getSourceFile()) &&
+				 entry1.getLineNumber() == entry2.getLineNumber() && 
+				 entry1.getIndex().equals(entry2.getIndex()) && 
+				 entry1.getDescription().equals(entry2.getDescription());		 
 	}
 
 	private boolean compareEntries(ResultEntry entry1, ResultEntry entry2) {
+		
+		return entry1.getMutatedClass().equals(entry2.getMutatedClass()) &&
+				 entry1.getMutatedMethod().equals(entry2.getMutatedMethod()) &&
+				 entry1.getMutator().equals(entry2.getMutator()) && 
+				 entry1.getSourceFile().equals(entry2.getSourceFile()) &&
+				 entry1.getLineNumber() == entry2.getLineNumber() && 
+				 entry1.getIndex().equals(entry2.getIndex()) && 
+				 entry1.getDescription().equals(entry2.getDescription()) && 
+				 entry1.getDetectionStatus().equals(entry2.getDetectionStatus());
 
-		return entry1.getLineNumber() == entry2.getLineNumber()
+		/*return entry1.getLineNumber() == entry2.getLineNumber()
 				&& entry1.getDescription().equals(entry2.getDescription())
-				&& entry1.getDetectionStatus().equals(entry2.getDetectionStatus());
+				&& entry1.getDetectionStatus().equals(entry2.getDetectionStatus());*/
 
 	}
 

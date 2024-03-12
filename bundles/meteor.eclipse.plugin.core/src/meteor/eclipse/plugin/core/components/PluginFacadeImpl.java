@@ -12,6 +12,7 @@ import java.time.temporal.ChronoField;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import org.eclipse.core.resources.IProject;
 import org.eclipse.jface.viewers.ISelection;
 import org.eclipse.ui.PlatformUI;
 import org.pitest.pitclipse.runner.PitResults;
@@ -19,12 +20,14 @@ import org.pitest.pitclipse.ui.swtbot.ResultsParser;
 import org.pitest.util.Log;
 
 import meteor.eclipse.plugin.core.Activator;
+import meteor.eclipse.plugin.core.components.helpers.EclipseUtils;
 import meteor.eclipse.plugin.core.components.helpers.FileUtils;
 import meteor.eclipse.plugin.core.components.helpers.ValidatorUtils;
 import meteor.eclipse.plugin.core.components.helpers.ValidatorUtils.ValidationResult;
 import meteor.eclipse.plugin.core.components.helpers.ViewUtils;
 import meteor.eclipse.plugin.core.components.mutation.tests.TestMutationAgent;
 import meteor.eclipse.plugin.core.threading.ResultListenerNotifier;
+import meteor.eclipse.plugin.core.tuples.Tuple3;
 
 public class PluginFacadeImpl implements PluginFacade, ResultListenerNotifier {
 
@@ -32,9 +35,11 @@ public class PluginFacadeImpl implements PluginFacade, ResultListenerNotifier {
 	private Double lastResultTestMutationScore, baselineResultTestMutationScore;
 	private TestMutationAgent mutationAgent;
 	private ISelection selection;
+	private IProject project;
 	private boolean isLocked;
 	private boolean isValidationDone;
-	private List<ValidationResult> validationResults, behaviourChangedMutants;
+	private Tuple3<List<ValidationResult>, Boolean, Boolean> validationResults;
+	private List<ValidationResult> behaviourChangedMutants;
 	private Path tempDir;
 
 	public PluginFacadeImpl(TestMutationAgent mutationAgent) {
@@ -54,7 +59,7 @@ public class PluginFacadeImpl implements PluginFacade, ResultListenerNotifier {
 	public void viewMainPanel() throws Exception {
 		ViewUtils.showViewMainPanel();
 	}
-	
+
 	public void generatePdfAnalysisReport() throws Exception {
 		if (ask("Do you want to generate analysis report?")) {
 			ViewUtils.showViewMainPanel();
@@ -66,34 +71,37 @@ public class PluginFacadeImpl implements PluginFacade, ResultListenerNotifier {
 				} else {
 					if (!isValidationDone) {
 						info("You must validate refactoring before generate report");
-					}	else {
+					} else {
 						String filePath = "";
-						
+
 						try {
 							ValidatorUtils validatorUtils = new ValidatorUtils();
-							
-							if(tempDir == null)
+
+							if (tempDir == null)
 								tempDir = Files.createTempDirectory("");// ("meteor_reports");
-												
+
 							LocalDateTime now = LocalDateTime.now();
-				            String reportName = String.format("mutation_test_report_%d%02d%02d%02d%02d%02d%03d.csv",
-				                now.getYear(), now.getMonthValue(), now.getDayOfMonth(),
-				                now.getHour(), now.getMinute(), now.getSecond(), now.get(ChronoField.MILLI_OF_SECOND));
-				            
-				            filePath = tempDir.resolve(reportName).toString();		
-							validatorUtils.generateCSV(validationResults, filePath);
-							
-							if(ask("Analysis report generated successfully in path: \n\n" + filePath + "\n\n Do you want to open the report?")) {
+							String reportName = String.format("mutation_test_report_%d%02d%02d%02d%02d%02d%03d.csv",
+									now.getYear(), now.getMonthValue(), now.getDayOfMonth(), now.getHour(),
+									now.getMinute(), now.getSecond(), now.get(ChronoField.MILLI_OF_SECOND));
+
+							filePath = tempDir.resolve(reportName).toString();
+							validatorUtils.generateCSV(validationResults.first, filePath);
+
+							if (ask("Analysis report generated successfully in path: \n\n" + filePath
+									+ "\n\n Do you want to open the report?")) {
 								FileUtils.openFileInEclipse(filePath);
 							}
-							
+
 							ViewUtils.changeResult(refactoringSession, null, filePath);
-							
+
 						} catch (Exception e) {
-							if (filePath != "")								
-								error("Error on analysis report generation in path " +  filePath + "\n" + e.getMessage() + "\n" + e.getStackTrace());
+							if (filePath != "")
+								error("Error on analysis report generation in path " + filePath + "\n" + e.getMessage()
+										+ "\n" + e.getStackTrace());
 							else
-								error("Error on analysis report generation\n" + e.getMessage() + "\n" + e.getStackTrace());
+								error("Error on analysis report generation\n" + e.getMessage() + "\n"
+										+ e.getStackTrace());
 						}
 					}
 				}
@@ -113,11 +121,10 @@ public class PluginFacadeImpl implements PluginFacade, ResultListenerNotifier {
 					info("You must run mutation tests after refactoring to validate!");
 				} else {
 					ValidatorUtils validatorUtils = new ValidatorUtils();
-					validationResults = validatorUtils
-							.validateMutations(mutationAgent.getBaselineResults(), mutationAgent.getLastResults());
+					validationResults = validatorUtils.validateMutations(mutationAgent.getBaselineResults(),
+							mutationAgent.getLastResults());
 
-					behaviourChangedMutants = validationResults.stream()
-							.filter(r -> r.isChangedBehaviour())
+					behaviourChangedMutants = validationResults.first.stream().filter(r -> r.isChangedBehaviour())
 							.collect(Collectors.toList());
 
 					if (behaviourChangedMutants.size() > 0) {
@@ -129,12 +136,17 @@ public class PluginFacadeImpl implements PluginFacade, ResultListenerNotifier {
 							Log.getLogger().info(i.toString());
 						});
 
+						// Verifica se existem detecções não padrão.
+						if (validationResults.third) {
+							info("There are some behavior changes related to non default mutant detection. The expeced detection are SURVIVED, KILLED or NO_COVERAGE. Please review carefully your results.");
+						}
+
 					} else {
 						ViewUtils.changeResult(refactoringSession, "Refactoring successfull.", null);
 					}
-					
+
 					isValidationDone = true;
-					
+
 					generatePdfAnalysisReport();
 				}
 
@@ -147,12 +159,12 @@ public class PluginFacadeImpl implements PluginFacade, ResultListenerNotifier {
 	public void runMutationTests() throws Exception {
 		if (ask("Do you want to run mutation tests? This process can take some minutes.")) {
 			ViewUtils.showViewMainPanel();
-			if (isValidationDone) {			
-				if (validationResults == null  || validationResults.size() == 0) {
+			if (isValidationDone) {
+				if (validationResults == null || validationResults.first.size() == 0) {
 					error("You have imported a JSON file and you need to create a new refactoring session before run mutation testing!");
 					return;
 				}
-				
+
 				info("This refactory session was validated before. So the last validation results will be clear, you must validate again after run mutation test.");
 				mutationAgent.setLastResults(null);
 				lastResultTestMutationScore = null;
@@ -161,9 +173,14 @@ public class PluginFacadeImpl implements PluginFacade, ResultListenerNotifier {
 			}
 			isValidationDone = false;
 
-			if (getSelectedResource() == null) {
+			if (getSelectedResource() == null || getSelectedProject() == null) {
 				error("You must select a valid test package or a test class before running your mutation testing for this refactoring session!");
 			} else {
+				if(EclipseUtils.hasCompilationErrors(getSelectedProject())){
+					error("This project has compilation errors. Please review your code before run mutation tests.");
+					return;
+				}
+				
 				if (refactoringSession == -1 && ask("Do you want to create a new refactoring session?")) {
 					refactoringSession = ViewUtils.addNewSession();
 				}
@@ -172,34 +189,32 @@ public class PluginFacadeImpl implements PluginFacade, ResultListenerNotifier {
 			}
 		}
 	}
-	
+
 	@Override
 	public void createSessionRefactoring() throws Exception {
-		if(refactoringSession != -1 && !isValidationDone) { 
+		if (refactoringSession != -1 && !isValidationDone) {
 			error("You must finish the previous session to evolve to a new refactoring session.");
-		} else { 
+		} else {
 			if (ask("Do you want to create a session refactoring?")) {
 				ViewUtils.showViewMainPanel();
 				refactoringSession = ViewUtils.addNewSession();
-				
-				if(refactoringSession > 1 
-						&& lastResultTestMutationScore != null 
-						&& validationResults != null
-						&& ask("Do you want to reuse last run result as baseline for this new refactoring session?")){
-					baselineResultTestMutationScore = lastResultTestMutationScore;			
+
+				if (refactoringSession > 1 && lastResultTestMutationScore != null && validationResults != null
+						&& ask("Do you want to reuse last run result as baseline for this new refactoring session?")) {
+					baselineResultTestMutationScore = lastResultTestMutationScore;
 					ViewUtils.changeBaselineTestMutationScore(refactoringSession, baselineResultTestMutationScore);
 					mutationAgent.generateBaseline();
 				} else {
 					baselineResultTestMutationScore = null;
 					mutationAgent.clearBaseline();
 				}
-				
+
 				isValidationDone = false;
-				validationResults = null;			
+				validationResults = null;
 				mutationAgent.setLastResults(null);
-				lastResultTestMutationScore = null;						
-			}			
-		}		
+				lastResultTestMutationScore = null;
+			}
+		}
 	}
 
 	@Override
@@ -240,13 +255,13 @@ public class PluginFacadeImpl implements PluginFacade, ResultListenerNotifier {
 		}
 
 	}
-	
+
 	@Override
-	public void notifyOnClose() {		
+	public void notifyOnClose() {
 		if (isLocked) {
 			unlock();
 			PlatformUI.getWorkbench().getDisplay().syncExec(() -> {
-				ViewUtils.changeLastResultTestMutationScore(refactoringSession, "Stopped or failure");			
+				ViewUtils.changeLastResultTestMutationScore(refactoringSession, "Stopped or failure");
 			});
 		}
 	}
@@ -266,7 +281,8 @@ public class PluginFacadeImpl implements PluginFacade, ResultListenerNotifier {
 
 	@Override
 	public void reset(Boolean skipConfirmation) throws Exception {
-		if (skipConfirmation || (!skipConfirmation && ask("Do you want to delete all the previous refactoring results?"))) {
+		if (skipConfirmation
+				|| (!skipConfirmation && ask("Do you want to delete all the previous refactoring results?"))) {
 			ViewUtils.showViewMainPanel();
 			ViewUtils.clear();
 
@@ -290,23 +306,34 @@ public class PluginFacadeImpl implements PluginFacade, ResultListenerNotifier {
 	@Override
 	public void importData() throws Exception {
 		ViewUtils.showViewMainPanel();
-		if (ask("All your not saved data will be lost! Confirm loading refactoring sessions?")) {	
-			ViewUtils.importRefactoringSessions((refactoringSession, baselineMutationScore, lastResultMutationScore, result) -> {
-				try {
-					reset(true);
-					if (refactoringSession != null)
-						this.refactoringSession = refactoringSession;
-					if (baselineMutationScore != null)
-						this.baselineResultTestMutationScore = baselineMutationScore;
-					if (lastResultMutationScore != null)
-						this.lastResultTestMutationScore = lastResultMutationScore;
-					if (result != null && result != "")
-						this.isValidationDone = true;
-				} catch (Exception e) {
-					error("Error on reset current view!");
-				}
-			});
+		if (ask("All your not saved data will be lost! Confirm loading refactoring sessions?")) {
+			ViewUtils.importRefactoringSessions(
+					(refactoringSession, baselineMutationScore, lastResultMutationScore, result) -> {
+						try {
+							reset(true);
+							if (refactoringSession != null)
+								this.refactoringSession = refactoringSession;
+							if (baselineMutationScore != null)
+								this.baselineResultTestMutationScore = baselineMutationScore;
+							if (lastResultMutationScore != null)
+								this.lastResultTestMutationScore = lastResultMutationScore;
+							if (result != null && result != "")
+								this.isValidationDone = true;
+						} catch (Exception e) {
+							error("Error on reset current view!");
+						}
+					});
 		}
+	}
+
+	@Override
+	public void setSelectedProject(IProject project) throws Exception {
+		this.project = project;
+	}
+
+	@Override
+	public IProject getSelectedProject() {
+		return project;
 	}
 
 }
