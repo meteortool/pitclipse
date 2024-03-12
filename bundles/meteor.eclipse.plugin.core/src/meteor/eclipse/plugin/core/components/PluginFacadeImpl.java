@@ -177,7 +177,7 @@ public class PluginFacadeImpl implements PluginFacade, ResultListenerNotifier {
 				error("You must select a valid test package or a test class before running your mutation testing for this refactoring session!");
 			} else {
 				if(EclipseUtils.hasCompilationErrors(getSelectedProject())){
-					error("This project has compilation errors. Please review your code before run mutation tests.");
+					error("This project has build errors. Please review your code before run mutation tests.");
 					return;
 				}
 				
