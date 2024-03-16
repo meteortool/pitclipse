@@ -128,17 +128,26 @@ public class PluginFacadeImpl implements PluginFacade, ResultListenerNotifier {
 							.collect(Collectors.toList());
 
 					if (behaviourChangedMutants.size() > 0) {
-						ViewUtils.changeResult(refactoringSession,
-								"Refactoring unsuccessfull (" + behaviourChangedMutants.size() + ") changes.", null);
 
 						Log.getLogger().info("________________________BEHAVIOUR CHANGES____________________________");
 						behaviourChangedMutants.forEach(i -> {
 							Log.getLogger().info(i.toString());
 						});
 
-						// Verifica se existem detecções não padrão.
 						if (validationResults.third) {
-							info("There are some behavior changes related to non default mutant detection. The expeced detection are SURVIVED, KILLED or NO_COVERAGE. Please review carefully your results.");
+							ViewUtils.changeResult(refactoringSession,
+									"Refactoring was inconclusive due to the presence of non-deterministic results. "
+											+ "Total (" + behaviourChangedMutants.size() + ") changes.",
+									null);
+
+							info("There are some behavior changes related to non default mutant detection. "
+									+ "The expeced detection are SURVIVED, KILLED or NO_COVERAGE. "
+									+ "You can retry your refactoring session running again the test execution."
+									+ "Please review carefully your results.");
+						} else {
+							ViewUtils.changeResult(refactoringSession,
+									"Refactoring unsuccessfull (" + behaviourChangedMutants.size() + ") changes.",
+									null);
 						}
 
 					} else {
@@ -176,11 +185,11 @@ public class PluginFacadeImpl implements PluginFacade, ResultListenerNotifier {
 			if (getSelectedResource() == null || getSelectedProject() == null) {
 				error("You must select a valid test package or a test class before running your mutation testing for this refactoring session!");
 			} else {
-				if(EclipseUtils.hasCompilationErrors(getSelectedProject())){
+				if (EclipseUtils.hasCompilationErrors(getSelectedProject())) {
 					error("This project has build errors. Please review your code before run mutation tests.");
 					return;
 				}
-				
+
 				if (refactoringSession == -1 && ask("Do you want to create a new refactoring session?")) {
 					refactoringSession = ViewUtils.addNewSession();
 				}

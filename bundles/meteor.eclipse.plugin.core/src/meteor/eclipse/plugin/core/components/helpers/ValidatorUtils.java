@@ -14,7 +14,6 @@ import org.pitest.pitclipse.runner.results.DetectionStatus;
 import org.pitest.util.Log;
 
 import meteor.eclipse.plugin.core.components.mutation.tests.ResultEntry;
-import meteor.eclipse.plugin.core.tuples.Tuple2;
 import meteor.eclipse.plugin.core.tuples.Tuple3;
 
 public class ValidatorUtils {
@@ -197,12 +196,12 @@ public class ValidatorUtils {
 	}
 	
 	public boolean checkIsNonDefaultResultValidation(ResultEntry entry1, ResultEntry entry2) {
-		return (!DetectionStatus.fromValue(entry1.getDetectionStatus()).equals(KILLED)|| 
-				!DetectionStatus.fromValue(entry1.getDetectionStatus()).equals(SURVIVED) ||
+		return (!DetectionStatus.fromValue(entry1.getDetectionStatus()).equals(KILLED) && 
+				!DetectionStatus.fromValue(entry1.getDetectionStatus()).equals(SURVIVED) &&
 				!DetectionStatus.fromValue(entry1.getDetectionStatus()).equals(NO_COVERAGE) &&
-				DetectionStatus.fromValue(entry2.getDetectionStatus()).equals(KILLED)|| 
+				(DetectionStatus.fromValue(entry2.getDetectionStatus()).equals(KILLED)|| 
 				DetectionStatus.fromValue(entry2.getDetectionStatus()).equals(SURVIVED) ||
-				DetectionStatus.fromValue(entry2.getDetectionStatus()).equals(NO_COVERAGE));		
+				DetectionStatus.fromValue(entry2.getDetectionStatus()).equals(NO_COVERAGE)));		
 	}
 	
 	public boolean checkIsNonDefaultResult(ResultEntry entry1, ResultEntry entry2) {
