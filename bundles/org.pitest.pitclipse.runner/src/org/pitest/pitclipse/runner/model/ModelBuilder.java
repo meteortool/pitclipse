@@ -109,7 +109,8 @@ public class ModelBuilder {
             .collect(groupingBy(
                     Mutations.Mutation::getMutatedClass,
                     mapping(dtoMutation ->
-                        Mutation.builder().withKillingTest(dtoMutation.getKillingTest())
+                        Mutation.builder()
+                        	.withKillingTest(dtoMutation.getKillingTest())
                             .withLineNumber(dtoMutation.getLineNumber().intValue())
                             .withMutatedMethod(dtoMutation.getMutatedMethod())
                             .withMutator(dtoMutation.getMutator()).withStatus(dtoMutation.getStatus())

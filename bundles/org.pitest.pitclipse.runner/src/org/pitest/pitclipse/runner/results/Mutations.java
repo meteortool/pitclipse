@@ -55,7 +55,8 @@ public class Mutations implements Serializable {
         protected String mutator;
         protected BigInteger index;
         protected String killingTest;
-        protected String description;
+        protected List<String> killingTests;     
+		protected String description;
         protected Boolean detected;
         protected DetectionStatus status;
 
@@ -138,5 +139,13 @@ public class Mutations implements Serializable {
         public void setStatus(DetectionStatus value) {
             this.status = value;
         }
+        
+        public List<String> getKillingTests() {
+			return killingTests;
+		}
+
+		public void setKillingTests(List<String> killingTests) {
+			this.killingTests = killingTests;
+		}
     }
 }

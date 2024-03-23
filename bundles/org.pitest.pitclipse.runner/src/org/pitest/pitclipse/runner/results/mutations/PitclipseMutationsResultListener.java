@@ -16,6 +16,7 @@
 
 package org.pitest.pitclipse.runner.results.mutations;
 
+import java.awt.datatransfer.SystemFlavorMap;
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -53,12 +54,13 @@ public class PitclipseMutationsResultListener implements MutationResultListener 
     }
 
     @Override
-    public void handleMutationResult(ClassMutationResults results) {
-        for (final MutationResult result : results.getMutations()) {
+    public void handleMutationResult(ClassMutationResults results) {    	
+        for (final MutationResult result : results.getMutations()) {        	
             MutationDetails details = result.getDetails();
             final Mutation mutation = OBJECT_FACTORY.createMutationsMutation();
             mutation.setIndex(BigInteger.valueOf(details.getFirstIndex()));
             result.getKillingTest().ifPresent(mutation::setKillingTest);
+            mutation.setKillingTests(result.getKillingTests());
             mutation.setLineNumber(BigInteger.valueOf(details.getLineNumber()));
             mutation.setMutatedClass(details.getClassName().asJavaName());
             mutation.setMutatedMethod(details.getMethod().name());

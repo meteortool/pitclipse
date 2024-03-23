@@ -17,6 +17,7 @@ public class PitResultConverter {
 		results.getMutations().getMutation().forEach(r -> {
 			
 			PitResultEntry pitResultEntry = new PitResultEntry();
+			pitResultEntry.setKillingTests(r.getKillingTests());
 			pitResultEntry.setDetected(r.isDetected());
 			pitResultEntry.setIndex(r.getIndex());
 			pitResultEntry.setDescription(r.getDescription());

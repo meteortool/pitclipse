@@ -1,9 +1,10 @@
 package meteor.eclipse.plugin.core.components.mutation.tests;
 
 import java.math.BigInteger;
+import java.util.List;
 
 public class PitResultEntry implements ResultEntry {
-	
+
 	private String mutatedClass;
 	private String mutatedMethod;
 	private String mutator;
@@ -14,6 +15,7 @@ public class PitResultEntry implements ResultEntry {
 	private BigInteger index;
 	private String description;
 	private String killingTest;
+	private List<String> killingTests;
 	
 	public String getKillingTest() {
 		return killingTest;
@@ -92,5 +94,22 @@ public class PitResultEntry implements ResultEntry {
 	}
 	public void setDescription(String description) {
 		this.description = description;
+	}
+
+	public List<String> getKillingTests() {
+		return killingTests;
+	}
+
+	public void setKillingTests(List<String> killingTests) {
+		this.killingTests = killingTests;
+	}
+	
+	
+	@Override
+	public String toString() {
+		return "PitResultEntry [mutatedClass=" + mutatedClass + ", mutatedMethod=" + mutatedMethod + ", mutator="
+				+ mutator + ", sourceFile=" + sourceFile + ", isDetected=" + isDetected + ", lineNumber=" + lineNumber
+				+ ", detectionStatus=" + detectionStatus + ", index=" + index + ", description=" + description
+				+ ", killingTest=" + killingTest + ", killingTests=" + killingTests.toString() + "]";
 	}
 }

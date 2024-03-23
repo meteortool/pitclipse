@@ -1,12 +1,15 @@
 package meteor.eclipse.plugin.core.components.mutation.tests;
 
 import java.math.BigInteger;
+import java.util.List;
 
 public interface ResultEntry {
 
 	String getDetectionStatus();
 
 	String getKillingTest();
+	
+	List<String> getKillingTests();
 
 	int getLineNumber();
 	
@@ -43,5 +46,7 @@ public interface ResultEntry {
 	void setMutator(String mutator);
 
 	void setSourceFile(String sourceFile);
+	
+	void setKillingTests(List<String> killingTests);
 
 }
