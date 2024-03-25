@@ -257,7 +257,7 @@ public class ValidatorUtils {
 						baselineEntry.getDetectionStatus(), 
 						matchingEntry.getDetectionStatus(),
 						matchingEntry.getSourceFile(), !compareEntries(baselineEntry, matchingEntry));
-
+				
 				if (validationResult.isChangedBehaviour()) {
 					hasNonDefaultResult = checkIsNonDefaultResult(baselineEntry, matchingEntry);
 				}
@@ -303,7 +303,7 @@ public class ValidatorUtils {
 						matchingEntry.getDetectionStatus(), 
 						lastRunResultsEntry.getSourceFile(),
 						!compareEntries(lastRunResultsEntry, matchingEntry));
-
+				
 				if (validationResult.isChangedBehaviour()) {
 					hasNonDefaultResult = checkIsNonDefaultResult(lastRunResultsEntry, matchingEntry);
 				}
@@ -370,8 +370,8 @@ public class ValidatorUtils {
 				 entry1.getLineNumber() == entry2.getLineNumber() && 
 				 entry1.getIndex().equals(entry2.getIndex()) && 
 				 entry1.getDescription().equals(entry2.getDescription()) && 
-				 entry1.getDetectionStatus().equals(entry2.getDetectionStatus()) &&
-				 entry1.getKillingTest().equals(entry2.getKillingTest());
+				 entry1.getDetectionStatus().equals(entry2.getDetectionStatus()/*) &&
+				 entry1.getKillingTest().equals(entry2.getKillingTest()*/);
 
 	}
 
