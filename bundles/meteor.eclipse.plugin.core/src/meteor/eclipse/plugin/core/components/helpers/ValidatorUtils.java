@@ -389,9 +389,9 @@ public class ValidatorUtils {
 
 	private static String formatResultEntry(ResultEntry entry) {
 		
-		if(entry.getKillingTest().contains("testCustomerName")){
+		/*if(entry.getKillingTest().contains("testCustomerName")){
 			System.out.println("here");
-		}
+		}*/
 		
 		StringBuilder sb = new StringBuilder();
 		sb.append("Index: ").append(entry.getIndex()).append("\n");
