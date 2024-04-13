@@ -8,6 +8,7 @@ import java.io.BufferedWriter;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import org.pitest.pitclipse.runner.results.DetectionStatus;
@@ -22,9 +23,8 @@ public class ValidatorUtils {
 		
 		private int lineOfCode;
 		private String description;
-		private String previousKillingTest;
-		private String afterKillingTest;
-		private List<String> killingTests;
+		private List<String> previousKillingTests;
+		private List<String> afterKillingTests;
 		private String className;
 		private String methodName;
 		private String mutator;
@@ -35,9 +35,8 @@ public class ValidatorUtils {
 
 		public ValidationResult(int lineOfCode, 
 								String description,
-								String previousKillingTest,
-								String afterKillingTest,
-								List<String> killingTests,
+								List<String> previousKillingTests,
+								List<String> afterKillingTests,
 								String className, 
 								String methodName, 
 								String mutator,
@@ -47,9 +46,8 @@ public class ValidatorUtils {
 								boolean changedBehaviour) {
 			this.lineOfCode = lineOfCode;
 			this.description = description;
-			this.previousKillingTest = previousKillingTest;
-			this.afterKillingTest = afterKillingTest;
-			this.setKillingTests(killingTests);
+			this.previousKillingTests = previousKillingTests;
+			this.afterKillingTests = afterKillingTests;
 			this.className = className;
 			this.methodName = methodName;
 			this.mutator = mutator;
@@ -75,12 +73,12 @@ public class ValidatorUtils {
 			this.description = description;
 		}
 
-		public String getPreviousKillingTest() {
-			return previousKillingTest;
+		public List<String> getPreviousKillingTests() {
+			return previousKillingTests;
 		}
 
-		public void setPreviousKillingTest(String previousKillingTest) {
-			this.previousKillingTest = previousKillingTest;
+		public void setPreviousKillingTests(List<String> previousKillingTests) {
+			this.previousKillingTests = previousKillingTests;
 		}
 
 		public String getClassName() {
@@ -142,26 +140,18 @@ public class ValidatorUtils {
 		@Override
 		public String toString() {
 			return "ValidationResult [lineOfCode=" + lineOfCode + ", description=" + description + ", killingTest="
-					+ afterKillingTest + ", className=" + className + ", methodName=" + methodName + ", mutator=" + mutator
+					+ afterKillingTests + ", className=" + className + ", methodName=" + methodName + ", mutator=" + mutator
 					+ ", previousDetectionStatus=" + previousDetectionStatus + ", afterDetectionStatus="
 					+ afterDetectionStatus + ", sourceFile=" + sourceFile + ", changedBehaviour=" + changedBehaviour
 					+ "]";
 		}
 
-		public List<String> getKillingTests() {
-			return killingTests;
+		public List<String> getAfterKillingTests() {
+			return afterKillingTests;
 		}
 
-		public void setKillingTests(List<String> killingTests) {
-			this.killingTests = killingTests;
-		}
-
-		public String getAfterKillingTest() {
-			return afterKillingTest;
-		}
-
-		public void setAfterKillingTest(String afterKillingTest) {
-			this.afterKillingTest = afterKillingTest;
+		public void setAfterKillingTests(List<String> afterKillingTests) {
+			this.afterKillingTests = afterKillingTests;
 		}
 
 	}
@@ -191,8 +181,8 @@ public class ValidatorUtils {
 					+ "Method Name, "
 					+ "Mutator, "
 					+ "Description, "
-					+ "Previous Killing Test, "
-					+ "After Killing Test, "
+					+ "Previous Killing Tests, "					
+					+ "After Killing Tests, "
 					+ "Previous Detection Status, "
 					+ "After Detection Status, "
 					+ "Changed Behaviour, "
@@ -203,8 +193,8 @@ public class ValidatorUtils {
 				writer.append(result.getMethodName() + ",");
 				writer.append(result.getMutator() + ",");
 				writer.append("\"" + result.getDescription() + "\",");
-				writer.append("\"" + result.getPreviousKillingTest() + "\",");
-				writer.append("\"" + result.getAfterKillingTest() + "\",");
+				writer.append("\"" + result.getPreviousKillingTests() + "\",");
+				writer.append("\"" + result.getAfterKillingTests() + "\",");
 				writer.append(result.getPreviousDetectionStatus() + ",");
 				writer.append(result.getAfterDetectionStatus() + ",");
 				writer.append(result.isChangedBehaviour() + ",");
@@ -248,9 +238,8 @@ public class ValidatorUtils {
 			if (matchingEntry != null) {
 				validationResult = new ValidationResult(baselineEntry.getLineNumber(), 
 						baselineEntry.getDescription(),
-						baselineEntry.getKillingTest(), 
-						matchingEntry.getKillingTest(),
-						baselineEntry.getKillingTests(),
+						baselineEntry.getKillingTests(), 
+						matchingEntry.getKillingTests(),
 						baselineEntry.getMutatedClass(),
 						baselineEntry.getMutatedMethod(), 
 						baselineEntry.getMutator(),
@@ -265,9 +254,8 @@ public class ValidatorUtils {
 			} else {
 				validationResult = new ValidationResult(baselineEntry.getLineNumber(), 
 						baselineEntry.getDescription(),
-						baselineEntry.getKillingTest(),
-						"",
 						baselineEntry.getKillingTests(),
+						null,
 						baselineEntry.getMutatedClass(),
 						baselineEntry.getMutatedMethod(), 
 						baselineEntry.getMutator(),
@@ -293,9 +281,8 @@ public class ValidatorUtils {
 			if (matchingEntry != null) {
 				validationResult = new ValidationResult(lastRunResultsEntry.getLineNumber(),
 						lastRunResultsEntry.getDescription(), 
-						lastRunResultsEntry.getKillingTest(),
-						matchingEntry.getKillingTest(),
 						lastRunResultsEntry.getKillingTests(),
+						matchingEntry.getKillingTests(),
 						lastRunResultsEntry.getMutatedClass(), 
 						lastRunResultsEntry.getMutatedMethod(),
 						lastRunResultsEntry.getMutator(), 
@@ -311,8 +298,7 @@ public class ValidatorUtils {
 			} else {
 				validationResult = new ValidationResult(lastRunResultsEntry.getLineNumber(),
 						lastRunResultsEntry.getDescription(), 
-						"",
-						lastRunResultsEntry.getKillingTest(),
+						null,
 						lastRunResultsEntry.getKillingTests(),
 						lastRunResultsEntry.getMutatedClass(), 
 						lastRunResultsEntry.getMutatedMethod(),
@@ -363,17 +349,39 @@ public class ValidatorUtils {
 
 	private boolean compareEntries(ResultEntry entry1, ResultEntry entry2) {
 		
-		return entry1.getMutatedClass().equals(entry2.getMutatedClass()) &&
-				 entry1.getMutatedMethod().equals(entry2.getMutatedMethod()) &&
-				 entry1.getMutator().equals(entry2.getMutator()) && 
-				 entry1.getSourceFile().equals(entry2.getSourceFile()) &&
-				 entry1.getLineNumber() == entry2.getLineNumber() && 
-				 entry1.getIndex().equals(entry2.getIndex()) && 
-				 entry1.getDescription().equals(entry2.getDescription()) && 
-				 entry1.getDetectionStatus().equals(entry2.getDetectionStatus()/*) &&
-				 entry1.getKillingTest().equals(entry2.getKillingTest()*/);
-
+		if (entry1.getMutatedClass().equals(entry2.getMutatedClass()) &&
+				entry1.getMutatedMethod().equals(entry2.getMutatedMethod()) &&
+				entry1.getMutator().equals(entry2.getMutator()) && 
+				entry1.getSourceFile().equals(entry2.getSourceFile()) &&
+				entry1.getLineNumber() == entry2.getLineNumber() && 
+				entry1.getIndex().equals(entry2.getIndex()) && 
+				entry1.getDescription().equals(entry2.getDescription()) && 
+				entry1.getDetectionStatus().equals(entry2.getDetectionStatus())){
+			
+			return checkKillingTests(entry1.getKillingTests(), entry2.getKillingTests());			
+		}
+		
+		return false;
 	}
+	
+	
+	private boolean checkKillingTests(List<String> previousKillingTests, List<String> afterKillingTests) {
+        // Verifica se os tamanhos das listas são iguais
+        if (previousKillingTests.size() != afterKillingTests.size()) {
+            return false;
+        }
+
+        // Cria cópias das listas para não modificar as originais
+        List<String> previousCopy = new ArrayList<>(previousKillingTests);
+        List<String> afterCopy = new ArrayList<>(afterKillingTests);
+
+        // Ordena as cópias das listas
+        Collections.sort(previousCopy);
+        Collections.sort(afterCopy);
+
+        // Verifica se as listas ordenadas são iguais
+        return previousCopy.equals(afterCopy);
+    }
 
 	public static void saveResultEntries(List<ResultEntry> resultEntries, String filePath) {
 		try (BufferedWriter writer = new BufferedWriter(new FileWriter(filePath))) {

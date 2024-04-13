@@ -42,7 +42,7 @@ public class PitCliArguments {
         int threads = options.getThreads();
         File reportDir = options.getReportDirectory();
         List<String> args = new ArrayList<>(Arrays.asList(
-                "--failWhenNoMutations", "false", "--outputFormats", "HTML,PITCLIPSE_MUTATIONS,PITCLIPSE_SUMMARY",
+                "--failWhenNoMutations", "false", "--outputFormats", "XML,HTML,PITCLIPSE_MUTATIONS,PITCLIPSE_SUMMARY",
                 "--verbose", "--threads", Integer.toString(threads), "--reportDir", reportDir.getPath(),
                 "--targetTests", testsToRunFrom(options)));
         args.addAll(targetClassesFrom(options));

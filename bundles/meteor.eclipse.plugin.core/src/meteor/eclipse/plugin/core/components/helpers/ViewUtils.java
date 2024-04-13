@@ -1,9 +1,12 @@
 package meteor.eclipse.plugin.core.components.helpers;
 
 import java.io.File;
+import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.widgets.Display;
@@ -17,7 +20,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 
 import meteor.eclipse.plugin.core.functional.FunctionAfterLoadJSONFile;
-import meteor.eclipse.plugin.core.tuples.Tuple5;
+import meteor.eclipse.plugin.core.tuples.Tuple7;
 import meteor.eclipse.plugin.core.views.View;
 import meteor.eclipse.plugin.core.views.View.Item;
 
@@ -64,16 +67,54 @@ public class ViewUtils {
 
 		return counter;
 	}
+	
 
-	public static void changeBaselineTestMutationScore(int refactoringSession, Double baselineTestMutationScore) {
+	public static void changeLastResultTo(int refactoringSession, String text) {
+
+		View.Item parentItem = getParentItem(refactoringSession);
+		parentItem.getChildren().forEach(e -> {
+			if (e.getKey().equals(LAST_RESULT_TEST_MUTATION_SCORE_LABEL)) {
+				e.setValue(text);
+				view.getTreeViewer().update(e, new String[] { "Key", "Value" });
+				view.getTreeViewer().refresh(true);
+			}
+		});
+
+	}
+
+	
+	public static void changeLastResultTestMutationScore(int refactoringSession, Integer lastResultTestMutationCoverage, Double lastResultTestMutationScore) {
+
+		View.Item parentItem = getParentItem(refactoringSession);
+		parentItem.getChildren().forEach(e -> {
+			if (e.getKey().equals(LAST_RESULT_TEST_MUTATION_SCORE_LABEL)) {
+	            String scoreText = "";
+	            if (lastResultTestMutationCoverage != null && lastResultTestMutationScore != null) {
+	                DecimalFormat df = new DecimalFormat("#.####");
+	                scoreText = lastResultTestMutationCoverage + "% (" + df.format(lastResultTestMutationScore) + ")";
+	            }
+	            e.setValue(scoreText);
+	            view.getTreeViewer().update(e, new String[] { "Key", "Value" });
+	            view.getTreeViewer().refresh(true);
+	        }
+		});
+
+	}
+
+	public static void changeBaselineTestMutationScore(int refactoringSession, Integer baselineTestMutationCoverage, Double baselineTestMutationScore) {
 
 		View.Item parentItem = getParentItem(refactoringSession);
 		parentItem.getChildren().forEach(e -> {
 			if (e.getKey().equals(BASELINE_TEST_MUTATION_SCORE_LABEL)) {
-				e.setValue(String.valueOf(baselineTestMutationScore == null ? "" : baselineTestMutationScore));
-				view.getTreeViewer().update(e, new String[] { "Key", "Value" });
-				view.getTreeViewer().refresh(true);
-			}
+	            String scoreText = "";
+	            if (baselineTestMutationCoverage != null && baselineTestMutationScore != null) {
+	                DecimalFormat df = new DecimalFormat("#.####");
+	                scoreText = baselineTestMutationCoverage + "% (" + df.format(baselineTestMutationScore) + ")";
+	            }
+	            e.setValue(scoreText);
+	            view.getTreeViewer().update(e, new String[] { "Key", "Value" });
+	            view.getTreeViewer().refresh(true);
+	        }
 		});
 
 	}
@@ -103,18 +144,7 @@ public class ViewUtils {
 
 	}
 
-	public static void changeLastResultTestMutationScore(int refactoringSession, String lastResultTestMutationScore) {
-
-		View.Item parentItem = getParentItem(refactoringSession);
-		parentItem.getChildren().forEach(e -> {
-			if (e.getKey().equals(LAST_RESULT_TEST_MUTATION_SCORE_LABEL)) {
-				e.setValue(lastResultTestMutationScore == null ? "" : lastResultTestMutationScore);
-				view.getTreeViewer().update(e, new String[] { "Key", "Value" });
-				view.getTreeViewer().refresh(true);
-			}
-		});
-
-	}
+	
 
 	public static View.Item getParentItem(int refactoringSession) {
 
@@ -172,10 +202,16 @@ public class ViewUtils {
 				Shell shell = new Shell(Display.getDefault());
 				File file = showOpenDialog(shell);
 				if (file != null) {
-					Tuple5<List<View.Item>, Integer, Double, Double, String> result = importFromJson(
+					Tuple7<List<View.Item>, Integer, Integer, Double, Integer, Double, String> result = importFromJson(
 							file.getAbsolutePath());
 					if (result != null) {
-						afterLoadJsonFunction.execute(result.second, result.third, result.fourth, result.fifth);
+						afterLoadJsonFunction.execute(
+								result.second, 
+								result.third, 
+								result.fourth, 
+								result.fifth,
+								result.sixth,
+								result.seventh);
 						view.setTreeViewItems(result.first);
 						view.getTreeViewer().refresh();
 						counter = result.first.size();
@@ -244,10 +280,10 @@ public class ViewUtils {
 	}
 
 	// Importa a lista de JSON
-	public static Tuple5<List<Item>, Integer, Double, Double, String> importFromJson(String filePath) {
+	public static Tuple7<List<Item>, Integer, Integer, Double, Integer, Double, String> importFromJson(String filePath) {
 		ObjectMapper objectMapper = new ObjectMapper();
 		List<Item> itemList = new ArrayList<>();
-		Tuple5<List<Item>, Integer, Double, Double, String> result = null;
+		Tuple7<List<Item>, Integer, Integer, Double, Integer, Double, String> result = null;
 
 		try {
 			itemList = objectMapper.readValue(new File(filePath),
@@ -256,22 +292,57 @@ public class ViewUtils {
 			if (itemList.size() > 0) {
 				Item lastItem = itemList.get(itemList.size() - 1);
 				if (lastItem.getKey().equalsIgnoreCase(REFACTORING_SESSION_LABEL)) {
+					AtomicReference<Integer> baselineMutationCoverage = new AtomicReference<Integer>(),
+											lastResultMutationCoverage = new AtomicReference<Integer>();
 					AtomicReference<Double> baselineMutationScore = new AtomicReference<Double>(),
-							lastResultMutationScore = new AtomicReference<Double>();
+											lastResultMutationScore = new AtomicReference<Double>();
 					AtomicReference<String> sessionResult = new AtomicReference<String>();
 
+					// Dentro do seu código
 					lastItem.getChildren().forEach(e -> {
-						if (e.getKey().equalsIgnoreCase(BASELINE_TEST_MUTATION_SCORE_LABEL))
-							baselineMutationScore.set(Double.valueOf(e.getValue()));
-						else if (e.getKey().equalsIgnoreCase(LAST_RESULT_TEST_MUTATION_SCORE_LABEL))
-							lastResultMutationScore.set(Double.valueOf(e.getValue()));
-						else if (e.getKey().equalsIgnoreCase(REFACTORING_RESULT_LABEL))
-							sessionResult.set(e.getValue());
+					    if (e.getKey().equalsIgnoreCase(BASELINE_TEST_MUTATION_SCORE_LABEL)) {
+					        String value = e.getValue();
+					        if (value.contains("%")) {
+					            Pattern pattern = Pattern.compile("(\\d+)% \\((\\d+\\,\\d+)\\)");
+					            Matcher matcher = pattern.matcher(value);
+					            if (matcher.find()) {
+					                int coverage = Integer.parseInt(matcher.group(1));
+					                double score = Double.parseDouble(matcher.group(2).replace(',', '.'));
+					                baselineMutationCoverage.set(coverage);
+					                baselineMutationScore.set(score);
+					            }
+					        } else {
+					            baselineMutationCoverage.set(null);
+					            baselineMutationScore.set(Double.valueOf(value));
+					        }
+					    } else if (e.getKey().equalsIgnoreCase(LAST_RESULT_TEST_MUTATION_SCORE_LABEL)) {
+					        String value = e.getValue();
+					        if (value.contains("%")) {
+					            Pattern pattern = Pattern.compile("(\\d+)% \\((\\d+\\,\\d+)\\)");
+					            Matcher matcher = pattern.matcher(value);
+					            if (matcher.find()) {
+					                int coverage = Integer.parseInt(matcher.group(1));
+					                double score = Double.parseDouble(matcher.group(2).replace(',','.'));
+					                lastResultMutationCoverage.set(coverage);
+					                lastResultMutationScore.set(score);
+					            }
+					        } else {
+					            lastResultMutationCoverage.set(null);
+					            lastResultMutationScore.set(Double.valueOf(value));
+					        }
+					    } else if (e.getKey().equalsIgnoreCase(REFACTORING_RESULT_LABEL)) {
+					        sessionResult.set(e.getValue());
+					    }
 					});
 
-					result = new Tuple5<List<Item>, Integer, Double, Double, String>(itemList,
-							Integer.valueOf(lastItem.getValue().replaceAll("#", "")), baselineMutationScore.get(),
-							lastResultMutationScore.get(), sessionResult.get());
+					result = new Tuple7<List<Item>, Integer, Integer, Double, Integer, Double, String>(
+							itemList,
+							Integer.valueOf(lastItem.getValue().replaceAll("#", "")), 
+							baselineMutationCoverage.get(),
+							baselineMutationScore.get(),
+							lastResultMutationCoverage.get(),
+							lastResultMutationScore.get(), 
+							sessionResult.get());
 				}
 			}
 

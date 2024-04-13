@@ -32,7 +32,8 @@ import meteor.eclipse.plugin.core.tuples.Tuple3;
 public class PluginFacadeImpl implements PluginFacade, ResultListenerNotifier {
 
 	private int refactoringSession = -1;
-	private Double lastResultTestMutationScore, baselineResultTestMutationScore;
+	private Double lastResultTestMutationScore, baselineTestMutationScore;
+	private Integer lastResultTestMutationCoverage, baselineTestMutationCoverage;
 	private TestMutationAgent mutationAgent;
 	private ISelection selection;
 	private IProject project;
@@ -63,7 +64,7 @@ public class PluginFacadeImpl implements PluginFacade, ResultListenerNotifier {
 	public void generatePdfAnalysisReport() throws Exception {
 		if (ask("Do you want to generate analysis report?")) {
 			ViewUtils.showViewMainPanel();
-			if (baselineResultTestMutationScore == null) {
+			if (baselineTestMutationScore == null) {
 				info("You must fix a baseline to proceed!");
 			} else {
 				if (lastResultTestMutationScore == null) {
@@ -114,7 +115,7 @@ public class PluginFacadeImpl implements PluginFacade, ResultListenerNotifier {
 		if (ask("Do you want to validate refactoring?")) {
 			ViewUtils.showViewMainPanel();
 
-			if (baselineResultTestMutationScore == null) {
+			if (baselineTestMutationScore == null) {
 				info("You must fix a baseline to proceed!");
 			} else {
 				if (lastResultTestMutationScore == null) {
@@ -193,7 +194,7 @@ public class PluginFacadeImpl implements PluginFacade, ResultListenerNotifier {
 				if (refactoringSession == -1 && ask("Do you want to create a new refactoring session?")) {
 					refactoringSession = ViewUtils.addNewSession();
 				}
-				ViewUtils.changeLastResultTestMutationScore(refactoringSession, "Wait...");
+				ViewUtils.changeLastResultTo(refactoringSession, "Wait ...");
 				mutationAgent.run(this, this, refactoringSession);
 			}
 		}
@@ -210,11 +211,15 @@ public class PluginFacadeImpl implements PluginFacade, ResultListenerNotifier {
 
 				if (refactoringSession > 1 && lastResultTestMutationScore != null && validationResults != null
 						&& ask("Do you want to reuse last run result as baseline for this new refactoring session?")) {
-					baselineResultTestMutationScore = lastResultTestMutationScore;
-					ViewUtils.changeBaselineTestMutationScore(refactoringSession, baselineResultTestMutationScore);
+					
+					baselineTestMutationScore = lastResultTestMutationScore;
+					baselineTestMutationCoverage = lastResultTestMutationCoverage;
+					
+					ViewUtils.changeBaselineTestMutationScore(refactoringSession, baselineTestMutationCoverage, baselineTestMutationScore);
 					mutationAgent.generateBaseline();
 				} else {
-					baselineResultTestMutationScore = null;
+					baselineTestMutationScore = null;
+					baselineTestMutationCoverage = null;
 					mutationAgent.clearBaseline();
 				}
 
@@ -222,6 +227,7 @@ public class PluginFacadeImpl implements PluginFacade, ResultListenerNotifier {
 				validationResults = null;
 				mutationAgent.setLastResults(null);
 				lastResultTestMutationScore = null;
+				lastResultTestMutationCoverage = null;
 			}
 		}
 	}
@@ -231,9 +237,9 @@ public class PluginFacadeImpl implements PluginFacade, ResultListenerNotifier {
 		if (ask("Do you want to fix actual results as baseline?")) {
 			isValidationDone = false;
 			ViewUtils.showViewMainPanel();
-			ViewUtils.changeLastResultTestMutationScore(refactoringSession, null);
-			ViewUtils.changeBaselineTestMutationScore(refactoringSession, lastResultTestMutationScore);
-			baselineResultTestMutationScore = lastResultTestMutationScore;
+			ViewUtils.changeLastResultTo(refactoringSession, "");
+			ViewUtils.changeBaselineTestMutationScore(refactoringSession, lastResultTestMutationCoverage, lastResultTestMutationScore);
+			baselineTestMutationScore = lastResultTestMutationScore;
 			lastResultTestMutationScore = null;
 			mutationAgent.generateBaseline();
 		}
@@ -249,9 +255,11 @@ public class PluginFacadeImpl implements PluginFacade, ResultListenerNotifier {
 			mutationAgent.setLastResults(results);
 
 			PlatformUI.getWorkbench().getDisplay().syncExec(() -> {
-				lastResultTestMutationScore = parser.getSummary().getMutationCoverage();
-				ViewUtils.changeLastResultTestMutationScore(refactoringSession,
-						String.valueOf(lastResultTestMutationScore));
+				lastResultTestMutationCoverage = parser.getSummary().getMutationCoverage();
+				lastResultTestMutationScore = parser.getSummary().getMutationScore();
+				ViewUtils.changeLastResultTestMutationScore(refactoringSession, 
+															lastResultTestMutationCoverage,
+															lastResultTestMutationScore);
 			});
 
 			Log.getLogger().info("________________________RESULT____________________________");
@@ -261,6 +269,8 @@ public class PluginFacadeImpl implements PluginFacade, ResultListenerNotifier {
 
 		} catch (IOException e) {
 			throw new RuntimeException("Error on parsing results.", e);
+		} catch (Exception e) {
+			throw new RuntimeException("Error on notification.", e);			
 		}
 
 	}
@@ -270,7 +280,7 @@ public class PluginFacadeImpl implements PluginFacade, ResultListenerNotifier {
 		if (isLocked) {
 			unlock();
 			PlatformUI.getWorkbench().getDisplay().syncExec(() -> {
-				ViewUtils.changeLastResultTestMutationScore(refactoringSession, "Stopped or failure");
+				ViewUtils.changeLastResultTo(refactoringSession, null);
 			});
 		}
 	}
@@ -298,7 +308,7 @@ public class PluginFacadeImpl implements PluginFacade, ResultListenerNotifier {
 			mutationAgent.clearBaseline();
 			mutationAgent.setLastResults(null);
 
-			baselineResultTestMutationScore = null;
+			baselineTestMutationScore = null;
 			lastResultTestMutationScore = null;
 			refactoringSession = -1;
 		}
@@ -317,13 +327,17 @@ public class PluginFacadeImpl implements PluginFacade, ResultListenerNotifier {
 		ViewUtils.showViewMainPanel();
 		if (ask("All your not saved data will be lost! Confirm loading refactoring sessions?")) {
 			ViewUtils.importRefactoringSessions(
-					(refactoringSession, baselineMutationScore, lastResultMutationScore, result) -> {
+					(refactoringSession, baselineMutationCoverage, baselineMutationScore, lastResultMutationCoverage, lastResultMutationScore, result) -> {
 						try {
 							reset(true);
 							if (refactoringSession != null)
 								this.refactoringSession = refactoringSession;
+							if (baselineMutationCoverage != null)
+								this.baselineTestMutationCoverage = baselineMutationCoverage;
 							if (baselineMutationScore != null)
-								this.baselineResultTestMutationScore = baselineMutationScore;
+								this.baselineTestMutationScore = baselineMutationScore;
+							if (lastResultMutationCoverage != null)
+								this.lastResultTestMutationCoverage = lastResultMutationCoverage;
 							if (lastResultMutationScore != null)
 								this.lastResultTestMutationScore = lastResultMutationScore;
 							if (result != null && result != "")

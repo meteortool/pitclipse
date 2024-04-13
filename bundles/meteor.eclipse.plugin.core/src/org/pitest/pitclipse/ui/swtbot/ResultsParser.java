@@ -49,12 +49,16 @@ public class ResultsParser {
             return classes;
         }
 
-        public double getCodeCoverage() {
+        public int getCodeCoverage() {
             return codeCoverage;
         }
 
-        public double getMutationCoverage() {
+        public int getMutationCoverage() {
             return mutationCoverage;
+        }
+        
+        public double getMutationScore() {
+        	return killedMutants / (double)generatedMutants;
         }
 
         public int getGeneratedMutants() {

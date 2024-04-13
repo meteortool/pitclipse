@@ -2,6 +2,6 @@ package meteor.eclipse.plugin.core.functional;
 
 public interface FunctionAfterLoadJSONFile {
 	
-	void execute(Integer refactoringSession, Double baselineMutationScore, Double lastResultMutationScore, String result);
+	void execute(Integer refactoringSession, Integer baselineMutationCoverage, Double baselineMutationScore, Integer lastResultMutationCoverage, Double lastResultMutationScore, String result);
 
 }
