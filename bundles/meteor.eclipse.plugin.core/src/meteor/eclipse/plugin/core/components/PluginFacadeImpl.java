@@ -27,7 +27,7 @@ import meteor.eclipse.plugin.core.components.helpers.ValidatorUtils.ValidationRe
 import meteor.eclipse.plugin.core.components.helpers.ViewUtils;
 import meteor.eclipse.plugin.core.components.mutation.tests.TestMutationAgent;
 import meteor.eclipse.plugin.core.threading.ResultListenerNotifier;
-import meteor.eclipse.plugin.core.tuples.Tuple3;
+import meteor.eclipse.plugin.core.tuples.Tuple4;
 
 public class PluginFacadeImpl implements PluginFacade, ResultListenerNotifier {
 
@@ -39,7 +39,7 @@ public class PluginFacadeImpl implements PluginFacade, ResultListenerNotifier {
 	private IProject project;
 	private boolean isLocked;
 	private boolean isValidationDone;
-	private Tuple3<List<ValidationResult>, Boolean, Boolean> validationResults;
+	private Tuple4<List<ValidationResult>, Boolean, Boolean, Boolean> validationResults;
 	private List<ValidationResult> behaviourChangedMutants;
 	private Path tempDir;
 
@@ -79,7 +79,7 @@ public class PluginFacadeImpl implements PluginFacade, ResultListenerNotifier {
 							ValidatorUtils validatorUtils = new ValidatorUtils();
 
 							if (tempDir == null)
-								tempDir = Files.createTempDirectory("");// ("meteor_reports");
+								tempDir = Files.createTempDirectory("");
 
 							LocalDateTime now = LocalDateTime.now();
 							String reportName = String.format("mutation_test_report_%d%02d%02d%02d%02d%02d%03d.csv",
@@ -128,7 +128,14 @@ public class PluginFacadeImpl implements PluginFacade, ResultListenerNotifier {
 					behaviourChangedMutants = validationResults.first.stream().filter(r -> r.isChangedBehaviour())
 							.collect(Collectors.toList());
 
-					if (behaviourChangedMutants.size() > 0) {
+					if (behaviourChangedMutants.size() > 0 || (behaviourChangedMutants.size() == 0
+							&& validationResults.fourth
+							&& ask("It was detected that there were some changes in killing tests before and after refactoring. "
+									+ "Would you like to take this into consideration during the analysis? "
+									+ "If you only changed the name of a test, or if you aggregated or disaggregated tests, it is suggested to confirm this dialog with 'no.' "
+									+ "Otherwise, indeed, confirm as 'yes' and you may need to evaluate the tests to prevent your validation from being contaminated by the masking effect."
+									+ "\n\nIf you confirm 'yes', your refactoring will be considered unsuccessful even if the mutant states have not changed. "
+									+ "\n\nAll results marked with (*) will indicate differences in testing."))) {
 
 						Log.getLogger().info("________________________BEHAVIOUR CHANGES____________________________");
 						behaviourChangedMutants.forEach(i -> {
@@ -137,12 +144,12 @@ public class PluginFacadeImpl implements PluginFacade, ResultListenerNotifier {
 
 						if (validationResults.third) {
 							ViewUtils.changeResult(refactoringSession,
-									"Refactoring was inconclusive due to the presence of non-deterministic results. "
-											+ "Total (" + behaviourChangedMutants.size() + ") changes.",
+									"Refactoring was inconclusive due to the presence of TIMED_OUT or other not expected mutante states changes."
+											+ "\n\nTotal (" + behaviourChangedMutants.size() + ") changes.",
 									null);
 
 							info("There are some behavior changes related to non default mutant detection. "
-									+ "The expeced detection are SURVIVED, KILLED or NO_COVERAGE. "
+									+ "The expected detection are SURVIVED, KILLED or NO_COVERAGE. "
 									+ "You can retry your refactoring session running again the test execution."
 									+ "Please review carefully your results.");
 						} else {
@@ -159,10 +166,8 @@ public class PluginFacadeImpl implements PluginFacade, ResultListenerNotifier {
 
 					generatePdfAnalysisReport();
 				}
-
 			}
 		}
-
 	}
 
 	@Override
@@ -211,11 +216,12 @@ public class PluginFacadeImpl implements PluginFacade, ResultListenerNotifier {
 
 				if (refactoringSession > 1 && lastResultTestMutationScore != null && validationResults != null
 						&& ask("Do you want to reuse last run result as baseline for this new refactoring session?")) {
-					
+
 					baselineTestMutationScore = lastResultTestMutationScore;
 					baselineTestMutationCoverage = lastResultTestMutationCoverage;
-					
-					ViewUtils.changeBaselineTestMutationScore(refactoringSession, baselineTestMutationCoverage, baselineTestMutationScore);
+
+					ViewUtils.changeBaselineTestMutationScore(refactoringSession, baselineTestMutationCoverage,
+							baselineTestMutationScore);
 					mutationAgent.generateBaseline();
 				} else {
 					baselineTestMutationScore = null;
@@ -238,7 +244,8 @@ public class PluginFacadeImpl implements PluginFacade, ResultListenerNotifier {
 			isValidationDone = false;
 			ViewUtils.showViewMainPanel();
 			ViewUtils.changeLastResultTo(refactoringSession, "");
-			ViewUtils.changeBaselineTestMutationScore(refactoringSession, lastResultTestMutationCoverage, lastResultTestMutationScore);
+			ViewUtils.changeBaselineTestMutationScore(refactoringSession, lastResultTestMutationCoverage,
+					lastResultTestMutationScore);
 			baselineTestMutationScore = lastResultTestMutationScore;
 			lastResultTestMutationScore = null;
 			mutationAgent.generateBaseline();
@@ -257,9 +264,8 @@ public class PluginFacadeImpl implements PluginFacade, ResultListenerNotifier {
 			PlatformUI.getWorkbench().getDisplay().syncExec(() -> {
 				lastResultTestMutationCoverage = parser.getSummary().getMutationCoverage();
 				lastResultTestMutationScore = parser.getSummary().getMutationScore();
-				ViewUtils.changeLastResultTestMutationScore(refactoringSession, 
-															lastResultTestMutationCoverage,
-															lastResultTestMutationScore);
+				ViewUtils.changeLastResultTestMutationScore(refactoringSession, lastResultTestMutationCoverage,
+						lastResultTestMutationScore);
 			});
 
 			Log.getLogger().info("________________________RESULT____________________________");
@@ -270,9 +276,9 @@ public class PluginFacadeImpl implements PluginFacade, ResultListenerNotifier {
 		} catch (IOException e) {
 			throw new RuntimeException("Error on parsing results.", e);
 		} catch (Exception e) {
-			throw new RuntimeException("Error on notification.", e);			
+			throw new RuntimeException("Error on notification.", e);
 		}
-
+		
 	}
 
 	@Override
@@ -326,26 +332,26 @@ public class PluginFacadeImpl implements PluginFacade, ResultListenerNotifier {
 	public void importData() throws Exception {
 		ViewUtils.showViewMainPanel();
 		if (ask("All your not saved data will be lost! Confirm loading refactoring sessions?")) {
-			ViewUtils.importRefactoringSessions(
-					(refactoringSession, baselineMutationCoverage, baselineMutationScore, lastResultMutationCoverage, lastResultMutationScore, result) -> {
-						try {
-							reset(true);
-							if (refactoringSession != null)
-								this.refactoringSession = refactoringSession;
-							if (baselineMutationCoverage != null)
-								this.baselineTestMutationCoverage = baselineMutationCoverage;
-							if (baselineMutationScore != null)
-								this.baselineTestMutationScore = baselineMutationScore;
-							if (lastResultMutationCoverage != null)
-								this.lastResultTestMutationCoverage = lastResultMutationCoverage;
-							if (lastResultMutationScore != null)
-								this.lastResultTestMutationScore = lastResultMutationScore;
-							if (result != null && result != "")
-								this.isValidationDone = true;
-						} catch (Exception e) {
-							error("Error on reset current view!");
-						}
-					});
+			ViewUtils.importRefactoringSessions((refactoringSession, baselineMutationCoverage, baselineMutationScore,
+					lastResultMutationCoverage, lastResultMutationScore, result) -> {
+				try {
+					reset(true);
+					if (refactoringSession != null)
+						this.refactoringSession = refactoringSession;
+					if (baselineMutationCoverage != null)
+						this.baselineTestMutationCoverage = baselineMutationCoverage;
+					if (baselineMutationScore != null)
+						this.baselineTestMutationScore = baselineMutationScore;
+					if (lastResultMutationCoverage != null)
+						this.lastResultTestMutationCoverage = lastResultMutationCoverage;
+					if (lastResultMutationScore != null)
+						this.lastResultTestMutationScore = lastResultMutationScore;
+					if (result != null && result != "")
+						this.isValidationDone = true;
+				} catch (Exception e) {
+					error("Error on reset current view!");
+				}
+			});
 		}
 	}
 

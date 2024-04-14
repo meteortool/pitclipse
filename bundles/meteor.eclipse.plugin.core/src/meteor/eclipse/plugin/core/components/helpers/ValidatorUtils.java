@@ -15,12 +15,14 @@ import org.pitest.pitclipse.runner.results.DetectionStatus;
 import org.pitest.util.Log;
 
 import meteor.eclipse.plugin.core.components.mutation.tests.ResultEntry;
+import meteor.eclipse.plugin.core.tuples.Tuple2;
 import meteor.eclipse.plugin.core.tuples.Tuple3;
+import meteor.eclipse.plugin.core.tuples.Tuple4;
 
 public class ValidatorUtils {
 
 	public class ValidationResult {
-		
+
 		private int lineOfCode;
 		private String description;
 		private List<String> previousKillingTests;
@@ -32,18 +34,12 @@ public class ValidatorUtils {
 		private String afterDetectionStatus;
 		private String sourceFile;
 		private boolean changedBehaviour;
+		private boolean changedKillingTests;
 
-		public ValidationResult(int lineOfCode, 
-								String description,
-								List<String> previousKillingTests,
-								List<String> afterKillingTests,
-								String className, 
-								String methodName, 
-								String mutator,
-								String previousDetectionStatus, 
-								String afterDetectionStatus, 
-								String sourceFile,
-								boolean changedBehaviour) {
+		public ValidationResult(int lineOfCode, String description, List<String> previousKillingTests,
+				List<String> afterKillingTests, String className, String methodName, String mutator,
+				String previousDetectionStatus, String afterDetectionStatus, String sourceFile,
+				boolean changedBehaviour, boolean changedKillingTests) {
 			this.lineOfCode = lineOfCode;
 			this.description = description;
 			this.previousKillingTests = previousKillingTests;
@@ -55,8 +51,9 @@ public class ValidatorUtils {
 			this.afterDetectionStatus = afterDetectionStatus;
 			this.sourceFile = sourceFile;
 			this.changedBehaviour = changedBehaviour;
+			this.changedKillingTests = changedKillingTests;
 		}
-		
+
 		public int getLineOfCode() {
 			return lineOfCode;
 		}
@@ -140,8 +137,8 @@ public class ValidatorUtils {
 		@Override
 		public String toString() {
 			return "ValidationResult [lineOfCode=" + lineOfCode + ", description=" + description + ", killingTest="
-					+ afterKillingTests + ", className=" + className + ", methodName=" + methodName + ", mutator=" + mutator
-					+ ", previousDetectionStatus=" + previousDetectionStatus + ", afterDetectionStatus="
+					+ afterKillingTests + ", className=" + className + ", methodName=" + methodName + ", mutator="
+					+ mutator + ", previousDetectionStatus=" + previousDetectionStatus + ", afterDetectionStatus="
 					+ afterDetectionStatus + ", sourceFile=" + sourceFile + ", changedBehaviour=" + changedBehaviour
 					+ "]";
 		}
@@ -154,10 +151,18 @@ public class ValidatorUtils {
 			this.afterKillingTests = afterKillingTests;
 		}
 
+		public boolean isChangedKillingTests() {
+			return changedKillingTests;
+		}
+
+		public void setChangedKillingTests(boolean changedKillingTests) {
+			this.changedKillingTests = changedKillingTests;
+		}
+
 	}
 
-	public Tuple3<List<ValidationResult>, Boolean, Boolean> validateMutations(List<ResultEntry> baselineResults,
-			List<ResultEntry> lastRunResults) {
+	public Tuple4<List<ValidationResult>, Boolean, Boolean, Boolean> validateMutations(
+			List<ResultEntry> baselineResults, List<ResultEntry> lastRunResults) {
 
 		Log.getLogger().info("________________BASELINE______________");
 		baselineResults.forEach(i -> {
@@ -168,25 +173,16 @@ public class ValidatorUtils {
 		lastRunResults.forEach(i -> {
 			Log.getLogger().info(i.toString());
 		});
-	
+
 		return compareResults(baselineResults, lastRunResults);
 
 	}
-	
+
 	public void generateCSV(List<ValidationResult> validationResults, String filePath) {
 		try (FileWriter writer = new FileWriter(filePath)) {
-			writer.append(
-					"Line of Code, "
-					+ "Class Name, "
-					+ "Method Name, "
-					+ "Mutator, "
-					+ "Description, "
-					+ "Previous Killing Tests, "					
-					+ "After Killing Tests, "
-					+ "Previous Detection Status, "
-					+ "After Detection Status, "
-					+ "Changed Behaviour, "
-					+ "Source File\n");
+			writer.append("Line of Code, " + "Class Name, " + "Method Name, " + "Mutator, " + "Description, "
+					+ "Previous Killing Tests, " + "After Killing Tests, " + "Previous Detection Status, "
+					+ "After Detection Status, " + "Changed Behaviour, " + "Source File\n");
 			for (ValidationResult result : validationResults) {
 				writer.append(result.getLineOfCode() + ",");
 				writer.append(result.getClassName() + ",");
@@ -197,7 +193,7 @@ public class ValidatorUtils {
 				writer.append("\"" + result.getAfterKillingTests() + "\",");
 				writer.append(result.getPreviousDetectionStatus() + ",");
 				writer.append(result.getAfterDetectionStatus() + ",");
-				writer.append(result.isChangedBehaviour() + ",");
+				writer.append(result.isChangedBehaviour() + (result.isChangedKillingTests() ? "*" : "") + ",");
 				writer.append(result.getSourceFile() + "\n");
 			}
 
@@ -208,26 +204,25 @@ public class ValidatorUtils {
 			throw new RuntimeException(e);
 		}
 	}
-	
+
 	public boolean checkIsNonDefaultResultValidation(ResultEntry entry1, ResultEntry entry2) {
-		return (!DetectionStatus.fromValue(entry1.getDetectionStatus()).equals(KILLED) && 
-				!DetectionStatus.fromValue(entry1.getDetectionStatus()).equals(SURVIVED) &&
-				!DetectionStatus.fromValue(entry1.getDetectionStatus()).equals(NO_COVERAGE) &&
-				(DetectionStatus.fromValue(entry2.getDetectionStatus()).equals(KILLED)|| 
-				DetectionStatus.fromValue(entry2.getDetectionStatus()).equals(SURVIVED) ||
-				DetectionStatus.fromValue(entry2.getDetectionStatus()).equals(NO_COVERAGE)));		
-	}
-	
-	public boolean checkIsNonDefaultResult(ResultEntry entry1, ResultEntry entry2) {
-		return checkIsNonDefaultResultValidation(entry1, entry2) ||
-				checkIsNonDefaultResultValidation(entry2, entry1);
+		return (!DetectionStatus.fromValue(entry1.getDetectionStatus()).equals(KILLED)
+				&& !DetectionStatus.fromValue(entry1.getDetectionStatus()).equals(SURVIVED)
+				&& !DetectionStatus.fromValue(entry1.getDetectionStatus()).equals(NO_COVERAGE)
+				&& (DetectionStatus.fromValue(entry2.getDetectionStatus()).equals(KILLED)
+						|| DetectionStatus.fromValue(entry2.getDetectionStatus()).equals(SURVIVED)
+						|| DetectionStatus.fromValue(entry2.getDetectionStatus()).equals(NO_COVERAGE)));
 	}
 
-	public Tuple3<List<ValidationResult>, Boolean, Boolean> compareResults(List<ResultEntry> baselineResults,
+	public boolean checkIsNonDefaultResult(ResultEntry entry1, ResultEntry entry2) {
+		return checkIsNonDefaultResultValidation(entry1, entry2) || checkIsNonDefaultResultValidation(entry2, entry1);
+	}
+
+	public Tuple4<List<ValidationResult>, Boolean, Boolean, Boolean> compareResults(List<ResultEntry> baselineResults,
 			List<ResultEntry> lastRunResults) {
-		Tuple3<List<ValidationResult>, Boolean, Boolean> result;
+		Tuple4<List<ValidationResult>, Boolean, Boolean, Boolean> result;
 		List<ValidationResult> validationResults = new ArrayList<>();
-		boolean hasChangedBehaviour = false, hasNonDefaultResult = false;
+		boolean hasChangedBehaviour = false, hasNonDefaultResult = false, hasKillingTestsDiff = false;
 
 		// Iterate over the baselineResults list
 		for (ResultEntry baselineEntry : baselineResults) {
@@ -236,32 +231,26 @@ public class ValidatorUtils {
 			ResultEntry matchingEntry = findMatchingEntry(baselineEntry, lastRunResults);
 
 			if (matchingEntry != null) {
-				validationResult = new ValidationResult(baselineEntry.getLineNumber(), 
-						baselineEntry.getDescription(),
-						baselineEntry.getKillingTests(), 
-						matchingEntry.getKillingTests(),
-						baselineEntry.getMutatedClass(),
-						baselineEntry.getMutatedMethod(), 
-						baselineEntry.getMutator(),
-						baselineEntry.getDetectionStatus(), 
-						matchingEntry.getDetectionStatus(),
-						matchingEntry.getSourceFile(), !compareEntries(baselineEntry, matchingEntry));
-				
+				Tuple2<Boolean, Boolean> comparisonEntriesResult = compareEntries(baselineEntry, matchingEntry);
+				validationResult = new ValidationResult(baselineEntry.getLineNumber(), baselineEntry.getDescription(),
+						baselineEntry.getKillingTests(), matchingEntry.getKillingTests(),
+						baselineEntry.getMutatedClass(), baselineEntry.getMutatedMethod(), baselineEntry.getMutator(),
+						baselineEntry.getDetectionStatus(), matchingEntry.getDetectionStatus(),
+						matchingEntry.getSourceFile(), !comparisonEntriesResult.first, !comparisonEntriesResult.second);
+
+				if (!comparisonEntriesResult.second) {
+					hasKillingTestsDiff = true;
+				}
 				if (validationResult.isChangedBehaviour()) {
 					hasNonDefaultResult = checkIsNonDefaultResult(baselineEntry, matchingEntry);
 				}
 
 			} else {
-				validationResult = new ValidationResult(baselineEntry.getLineNumber(), 
-						baselineEntry.getDescription(),
-						baselineEntry.getKillingTests(),
-						null,
-						baselineEntry.getMutatedClass(),
-						baselineEntry.getMutatedMethod(), 
-						baselineEntry.getMutator(),
-						baselineEntry.getDetectionStatus(), 
-						"NOT PRESENT IN LAST RUN", 
-						baselineEntry.getSourceFile(), true);
+				validationResult = new ValidationResult(baselineEntry.getLineNumber(), baselineEntry.getDescription(),
+						baselineEntry.getKillingTests(), null, baselineEntry.getMutatedClass(),
+						baselineEntry.getMutatedMethod(), baselineEntry.getMutator(),
+						baselineEntry.getDetectionStatus(), "NOT PRESENT IN LAST RUN", baselineEntry.getSourceFile(),
+						true, false);
 			}
 
 			if (validationResult.isChangedBehaviour()) {
@@ -279,32 +268,27 @@ public class ValidatorUtils {
 			ResultEntry matchingEntry = findMatchingEntry(lastRunResultsEntry, lastRunResults);
 
 			if (matchingEntry != null) {
+				Tuple2<Boolean, Boolean> comparisonEntriesResult = compareEntries(lastRunResultsEntry, matchingEntry);
 				validationResult = new ValidationResult(lastRunResultsEntry.getLineNumber(),
-						lastRunResultsEntry.getDescription(), 
-						lastRunResultsEntry.getKillingTests(),
-						matchingEntry.getKillingTests(),
-						lastRunResultsEntry.getMutatedClass(), 
-						lastRunResultsEntry.getMutatedMethod(),
-						lastRunResultsEntry.getMutator(), 
-						lastRunResultsEntry.getDetectionStatus(),
-						matchingEntry.getDetectionStatus(), 
-						lastRunResultsEntry.getSourceFile(),
-						!compareEntries(lastRunResultsEntry, matchingEntry));
-				
+						lastRunResultsEntry.getDescription(), lastRunResultsEntry.getKillingTests(),
+						matchingEntry.getKillingTests(), lastRunResultsEntry.getMutatedClass(),
+						lastRunResultsEntry.getMutatedMethod(), lastRunResultsEntry.getMutator(),
+						lastRunResultsEntry.getDetectionStatus(), matchingEntry.getDetectionStatus(),
+						lastRunResultsEntry.getSourceFile(), !comparisonEntriesResult.first, !comparisonEntriesResult.second);
+
+				if (!comparisonEntriesResult.second) {
+					hasKillingTestsDiff = true;
+				}
 				if (validationResult.isChangedBehaviour()) {
 					hasNonDefaultResult = checkIsNonDefaultResult(lastRunResultsEntry, matchingEntry);
 				}
 
 			} else {
 				validationResult = new ValidationResult(lastRunResultsEntry.getLineNumber(),
-						lastRunResultsEntry.getDescription(), 
-						null,
-						lastRunResultsEntry.getKillingTests(),
-						lastRunResultsEntry.getMutatedClass(), 
-						lastRunResultsEntry.getMutatedMethod(),
-						lastRunResultsEntry.getMutator(), 
-						lastRunResultsEntry.getDetectionStatus(), "NOT PRESENT IN BASELINE",
-						lastRunResultsEntry.getSourceFile(), true);
+						lastRunResultsEntry.getDescription(), null, lastRunResultsEntry.getKillingTests(),
+						lastRunResultsEntry.getMutatedClass(), lastRunResultsEntry.getMutatedMethod(),
+						lastRunResultsEntry.getMutator(), lastRunResultsEntry.getDetectionStatus(),
+						"NOT PRESENT IN BASELINE", lastRunResultsEntry.getSourceFile(), true, false);
 			}
 
 			if (validationResult.isChangedBehaviour()) {
@@ -314,8 +298,9 @@ public class ValidatorUtils {
 			validationResults.add(validationResult);
 		}
 
-		result = new Tuple3<List<ValidationResult>, Boolean, Boolean>(validationResults, hasChangedBehaviour,
-				hasNonDefaultResult);
+		result = new Tuple4<List<ValidationResult>, Boolean, Boolean, Boolean>(validationResults, hasChangedBehaviour,
+				hasNonDefaultResult, hasKillingTestsDiff);
+
 		return result;
 	}
 
@@ -325,63 +310,54 @@ public class ValidatorUtils {
 			if (entriesMatch(targetEntry, entry)) {
 				return entry;
 			}
-		}		
+		}
 		return null; // No matching entry found
 	}
 
 	private boolean entriesMatch(ResultEntry entry1, ResultEntry entry2) {
 
-		// Compare the necessary attributes to determine a match
-		// You can modify this logic based on the specific attributes that should match
-
-		/*return entry1.getDescription().equals(entry2.getDescription()) && 
-				entry1.getIndex().equals(entry2.getIndex()) && 
-				entry1.getLineNumber() == entry2.getLineNumber();*/
-		
-		 return entry1.getMutatedClass().equals(entry2.getMutatedClass()) &&
-				 entry1.getMutatedMethod().equals(entry2.getMutatedMethod()) &&
-				 entry1.getMutator().equals(entry2.getMutator()) && 
-				 entry1.getSourceFile().equals(entry2.getSourceFile()) &&
-				 entry1.getLineNumber() == entry2.getLineNumber() &&
-				 entry1.getIndex().equals(entry2.getIndex()) && 
-				 entry1.getDescription().equals(entry2.getDescription());		 
+		return entry1.getMutatedClass().equals(entry2.getMutatedClass())
+				&& entry1.getMutatedMethod().equals(entry2.getMutatedMethod())
+				&& entry1.getMutator().equals(entry2.getMutator())
+				&& entry1.getSourceFile().equals(entry2.getSourceFile())
+				&& entry1.getLineNumber() == entry2.getLineNumber() && entry1.getIndex().equals(entry2.getIndex())
+				&& entry1.getDescription().equals(entry2.getDescription());
 	}
 
-	private boolean compareEntries(ResultEntry entry1, ResultEntry entry2) {
-		
-		if (entry1.getMutatedClass().equals(entry2.getMutatedClass()) &&
-				entry1.getMutatedMethod().equals(entry2.getMutatedMethod()) &&
-				entry1.getMutator().equals(entry2.getMutator()) && 
-				entry1.getSourceFile().equals(entry2.getSourceFile()) &&
-				entry1.getLineNumber() == entry2.getLineNumber() && 
-				entry1.getIndex().equals(entry2.getIndex()) && 
-				entry1.getDescription().equals(entry2.getDescription()) && 
-				entry1.getDetectionStatus().equals(entry2.getDetectionStatus())){
-			
-			return checkKillingTests(entry1.getKillingTests(), entry2.getKillingTests());			
+	private Tuple2<Boolean, Boolean> compareEntries(ResultEntry entry1, ResultEntry entry2) {
+
+		if (entry1.getMutatedClass().equals(entry2.getMutatedClass())
+				&& entry1.getMutatedMethod().equals(entry2.getMutatedMethod())
+				&& entry1.getMutator().equals(entry2.getMutator())
+				&& entry1.getSourceFile().equals(entry2.getSourceFile())
+				&& entry1.getLineNumber() == entry2.getLineNumber() && entry1.getIndex().equals(entry2.getIndex())
+				&& entry1.getDescription().equals(entry2.getDescription())
+				&& entry1.getDetectionStatus().equals(entry2.getDetectionStatus())) {
+
+			return new Tuple2<Boolean, Boolean>(true,
+					checkKillingTests(entry1.getKillingTests(), entry2.getKillingTests()));
 		}
-		
-		return false;
+
+		return new Tuple2<Boolean, Boolean>(false, false);
 	}
-	
-	
+
 	private boolean checkKillingTests(List<String> previousKillingTests, List<String> afterKillingTests) {
-        // Verifica se os tamanhos das listas são iguais
-        if (previousKillingTests.size() != afterKillingTests.size()) {
-            return false;
-        }
+		// Verifica se os tamanhos das listas são iguais
+		if (previousKillingTests.size() != afterKillingTests.size()) {
+			return false;
+		}
 
-        // Cria cópias das listas para não modificar as originais
-        List<String> previousCopy = new ArrayList<>(previousKillingTests);
-        List<String> afterCopy = new ArrayList<>(afterKillingTests);
+		// Cria cópias das listas para não modificar as originais
+		List<String> previousCopy = new ArrayList<>(previousKillingTests);
+		List<String> afterCopy = new ArrayList<>(afterKillingTests);
 
-        // Ordena as cópias das listas
-        Collections.sort(previousCopy);
-        Collections.sort(afterCopy);
+		// Ordena as cópias das listas
+		Collections.sort(previousCopy);
+		Collections.sort(afterCopy);
 
-        // Verifica se as listas ordenadas são iguais
-        return previousCopy.equals(afterCopy);
-    }
+		// Verifica se as listas ordenadas são iguais
+		return previousCopy.equals(afterCopy);
+	}
 
 	public static void saveResultEntries(List<ResultEntry> resultEntries, String filePath) {
 		try (BufferedWriter writer = new BufferedWriter(new FileWriter(filePath))) {
@@ -396,11 +372,6 @@ public class ValidatorUtils {
 	}
 
 	private static String formatResultEntry(ResultEntry entry) {
-		
-		/*if(entry.getKillingTest().contains("testCustomerName")){
-			System.out.println("here");
-		}*/
-		
 		StringBuilder sb = new StringBuilder();
 		sb.append("Index: ").append(entry.getIndex()).append("\n");
 		sb.append("Description: ").append(entry.getDescription()).append("\n");
