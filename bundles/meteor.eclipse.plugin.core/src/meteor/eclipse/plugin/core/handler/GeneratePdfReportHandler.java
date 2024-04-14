@@ -8,7 +8,7 @@ public class GeneratePdfReportHandler extends PluginHandler {
 	@Override
 	public Object execute(ExecutionEvent event) throws ExecutionException {
 		try {
-			pluginFacade().generatePdfAnalysisReport();
+			pluginFacade().generateCsvAnalysisReport();
 		} catch (Exception e) {
 			throw new ExecutionException("Error on execution of command generate baseline.", e);
 		}

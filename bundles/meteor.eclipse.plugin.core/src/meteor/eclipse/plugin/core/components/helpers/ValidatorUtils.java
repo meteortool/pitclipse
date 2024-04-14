@@ -193,7 +193,7 @@ public class ValidatorUtils {
 				writer.append("\"" + result.getAfterKillingTests() + "\",");
 				writer.append(result.getPreviousDetectionStatus() + ",");
 				writer.append(result.getAfterDetectionStatus() + ",");
-				writer.append(result.isChangedBehaviour() + (result.isChangedKillingTests() ? "*" : "") + ",");
+				writer.append(result.isChangedBehaviour() + (maskingEffect(result) ? "*" : "") + ",");
 				writer.append(result.getSourceFile() + "\n");
 			}
 
@@ -203,6 +203,18 @@ public class ValidatorUtils {
 			Log.getLogger().severe(e.getStackTrace().toString());
 			throw new RuntimeException(e);
 		}
+	}
+	
+	public boolean maskingEffect(ValidationResult result) {
+		if (!result.isChangedBehaviour() &&
+		    result.isChangedKillingTests() &&
+			result.getAfterKillingTests().size() > 0 && 
+			result.getPreviousKillingTests().size() > 0 /*&&
+			(result.getAfterDetectionStatus().equals("SURVIVED") || result.getAfterDetectionStatus().equals("NO_COVERAGE"))*/){
+			return true;			
+		} 
+		
+		return false;		
 	}
 
 	public boolean checkIsNonDefaultResultValidation(ResultEntry entry1, ResultEntry entry2) {

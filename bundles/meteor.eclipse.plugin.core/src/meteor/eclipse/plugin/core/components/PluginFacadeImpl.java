@@ -61,7 +61,7 @@ public class PluginFacadeImpl implements PluginFacade, ResultListenerNotifier {
 		ViewUtils.showViewMainPanel();
 	}
 
-	public void generatePdfAnalysisReport() throws Exception {
+	public void generateCsvAnalysisReport() throws Exception {
 		if (ask("Do you want to generate analysis report?")) {
 			ViewUtils.showViewMainPanel();
 			if (baselineTestMutationScore == null) {
@@ -159,12 +159,14 @@ public class PluginFacadeImpl implements PluginFacade, ResultListenerNotifier {
 						}
 
 					} else {
-						ViewUtils.changeResult(refactoringSession, "Refactoring successfull.", null);
+						ViewUtils.changeResult(refactoringSession, "Refactoring successfull" + 
+																		(behaviourChangedMutants.size() == 0 && 
+																		 validationResults.fourth ? "*": "") + ".", null);
 					}
 
 					isValidationDone = true;
 
-					generatePdfAnalysisReport();
+					generateCsvAnalysisReport();
 				}
 			}
 		}

@@ -13,7 +13,7 @@ public interface PluginFacade {
 
 	void generateBaseline() throws Exception;
 	
-	void generatePdfAnalysisReport() throws Exception;
+	void generateCsvAnalysisReport() throws Exception;
 	
 	void createSessionRefactoring() throws Exception;
 
