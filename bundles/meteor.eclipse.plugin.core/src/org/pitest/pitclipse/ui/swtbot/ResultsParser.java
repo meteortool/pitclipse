@@ -24,8 +24,14 @@ import java.nio.file.Paths;
 import java.util.List;
 import java.util.Map;
 
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
 import org.pitest.pitclipse.runner.PitResults;
 import org.pitest.pitclipse.runner.results.Mutations.Mutation;
+
+import meteor.eclipse.plugin.core.tuples.Tuple2;
 
 public class ResultsParser {
 
@@ -36,13 +42,17 @@ public class ResultsParser {
         private final int mutationCoverage;
         private final int generatedMutants;
         private final int killedMutants;
+		private final int linesTotal;
+        private final int linesCovered;
 
-        private Summary(int classes, int codeCoverage, int mutationCoverage, int generatedMutants, int killedMutants) {
+        private Summary(int classes, int codeCovered, int linesCoverage, int linesTotal, int mutationCoverage, int generatedMutants, int killedMutants) {
             this.classes = classes;
-            this.codeCoverage = codeCoverage;
+            this.codeCoverage = codeCovered;
             this.mutationCoverage = mutationCoverage;
             this.generatedMutants = generatedMutants;
             this.killedMutants = killedMutants;
+            this.linesTotal = linesTotal;
+            this.linesCovered = linesCoverage;
         }
 
         public int getClasses() {
@@ -68,6 +78,14 @@ public class ResultsParser {
         public int getKilledMutants() {
             return killedMutants;
         }
+        
+        public int getLinesTotal() {
+			return linesTotal;
+		}
+
+		public int getLinesCovered() {
+			return linesCovered;
+		}
     }
 
     private static final String SUMMARY_START = "<h3>Project Summary</h3>";
@@ -93,6 +111,33 @@ public class ResultsParser {
         }
         return tmp;
     }
+    
+    public static Tuple2<Integer, Integer> getLineCoverage(String html) {
+        // Parse HTML usando Jsoup
+        Document doc = Jsoup.parse(html);
+
+        // Encontre a primeira linha dentro do tbody
+        Element tbody = doc.select("tbody").first();
+        Element firstRow = tbody.selectFirst("tr");
+
+        // Pegue o texto da segunda coluna dessa linha
+        Elements columns = firstRow.select("td");
+        if (columns.size() >= 2 && columns.get(2).getAllElements().size() > 3) {
+            String secondColumnText = columns.get(1).getAllElements().get(3).text();
+            String[] values = secondColumnText.split("/");
+
+            if (values.length == 2) {
+                int value1 = Integer.parseInt(values[0]);
+                int value2 = Integer.parseInt(values[1]);
+                return new Tuple2<>(value1, value2);
+            } else {
+                throw new IllegalArgumentException("Não foi possível extrair os valores.");
+            }
+        } else {
+            throw new IllegalArgumentException("Não foi possível encontrar a segunda coluna.");
+        }
+    }
+
 
     private String getProjectSummary() {
         String summary = "";
@@ -123,7 +168,14 @@ public class ResultsParser {
                         "Mutation Coverage").replace("%", ""));
             }
         }
-        return new Summary(classes, codeCoverage, mutationCoverage, generatedMutants, killedMutants);
+        Tuple2<Integer, Integer> lineCoverage = getLineCoverage(html);
+        return new Summary(classes, 
+        				   codeCoverage, 
+        				   lineCoverage.first, 
+        				   lineCoverage.second, 
+        				   mutationCoverage, 
+        				   generatedMutants, 
+        				   killedMutants);
     }
 
     static int caseInsensitveIndexOf(String s, String searchString) {

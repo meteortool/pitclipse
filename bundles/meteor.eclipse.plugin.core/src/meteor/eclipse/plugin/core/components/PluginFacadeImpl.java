@@ -7,6 +7,7 @@ import static meteor.eclipse.plugin.core.components.helpers.MessageUtils.info;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.text.DecimalFormat;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoField;
 import java.util.List;
@@ -32,7 +33,7 @@ import meteor.eclipse.plugin.core.tuples.Tuple4;
 public class PluginFacadeImpl implements PluginFacade, ResultListenerNotifier {
 
 	private int refactoringSession = -1;
-	private Double lastResultTestMutationScore, baselineTestMutationScore;
+	private Double lastResultTestMutationScore, baselineTestMutationScore, lastResultStatementCoverage, baselineStatementCoverage;
 	private Integer lastResultTestMutationCoverage, baselineTestMutationCoverage;
 	private TestMutationAgent mutationAgent;
 	private ISelection selection;
@@ -159,9 +160,16 @@ public class PluginFacadeImpl implements PluginFacade, ResultListenerNotifier {
 						}
 
 					} else {
-						ViewUtils.changeResult(refactoringSession, "Refactoring successfull" + 
-																		(behaviourChangedMutants.size() == 0 && 
-																		 validationResults.fourth ? "*": "") + ".", null);
+						if (!baselineStatementCoverage.equals(lastResultStatementCoverage)) {
+							DecimalFormat df = new DecimalFormat("#.####");
+							ViewUtils.changeResult(refactoringSession, 									
+													"Refactoring unsuccessfull due to statement coverage divergence. (Stmt. cvrg. before: " + df.format(baselineStatementCoverage) + 
+													" - Stmt. cvrg. after: " + df.format(lastResultStatementCoverage) + ")", null);
+						} else {
+							ViewUtils.changeResult(refactoringSession, "Refactoring successfull" + 
+																			(behaviourChangedMutants.size() == 0 && 
+																			 validationResults.fourth ? "*": "") + ".", null);
+						}
 					}
 
 					isValidationDone = true;
@@ -221,6 +229,7 @@ public class PluginFacadeImpl implements PluginFacade, ResultListenerNotifier {
 
 					baselineTestMutationScore = lastResultTestMutationScore;
 					baselineTestMutationCoverage = lastResultTestMutationCoverage;
+					baselineStatementCoverage = lastResultStatementCoverage;
 
 					ViewUtils.changeBaselineTestMutationScore(refactoringSession, baselineTestMutationCoverage,
 							baselineTestMutationScore);
@@ -228,6 +237,7 @@ public class PluginFacadeImpl implements PluginFacade, ResultListenerNotifier {
 				} else {
 					baselineTestMutationScore = null;
 					baselineTestMutationCoverage = null;
+					baselineStatementCoverage = null;
 					mutationAgent.clearBaseline();
 				}
 
@@ -236,6 +246,7 @@ public class PluginFacadeImpl implements PluginFacade, ResultListenerNotifier {
 				mutationAgent.setLastResults(null);
 				lastResultTestMutationScore = null;
 				lastResultTestMutationCoverage = null;
+				lastResultStatementCoverage = null;
 			}
 		}
 	}
@@ -249,6 +260,7 @@ public class PluginFacadeImpl implements PluginFacade, ResultListenerNotifier {
 			ViewUtils.changeBaselineTestMutationScore(refactoringSession, lastResultTestMutationCoverage,
 					lastResultTestMutationScore);
 			baselineTestMutationScore = lastResultTestMutationScore;
+			baselineStatementCoverage = lastResultStatementCoverage;
 			lastResultTestMutationScore = null;
 			mutationAgent.generateBaseline();
 		}
@@ -263,9 +275,10 @@ public class PluginFacadeImpl implements PluginFacade, ResultListenerNotifier {
 			ResultsParser parser = new ResultsParser(results);
 			mutationAgent.setLastResults(results);
 
-			PlatformUI.getWorkbench().getDisplay().syncExec(() -> {
+			PlatformUI.getWorkbench().getDisplay().syncExec(() -> {				
 				lastResultTestMutationCoverage = parser.getSummary().getMutationCoverage();
 				lastResultTestMutationScore = parser.getSummary().getMutationScore();
+				lastResultStatementCoverage =  (double) (parser.getSummary().getLinesCovered()) / parser.getSummary().getLinesTotal();
 				ViewUtils.changeLastResultTestMutationScore(refactoringSession, lastResultTestMutationCoverage,
 						lastResultTestMutationScore);
 			});
