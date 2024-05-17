@@ -181,8 +181,8 @@ public class ValidatorUtils {
 	public void generateCSV(List<ValidationResult> validationResults, String filePath) {
 		try (FileWriter writer = new FileWriter(filePath)) {
 			writer.append("Line of Code, " + "Class Name, " + "Method Name, " + "Mutator, " + "Description, "
-					+ "Previous Killing Tests, " + "After Killing Tests, " + "Previous Detection Status, "
-					+ "After Detection Status, " + "Changed Behaviour, " + "Source File\n");
+					+ "Previous Killing Tests, " + "After Killing Tests, " + "Previous Detection State, "
+					+ "After Detection State, " + "Changed Behaviour, " + "Source File\n");
 			for (ValidationResult result : validationResults) {
 				writer.append(result.getLineOfCode() + ",");
 				writer.append(result.getClassName() + ",");
