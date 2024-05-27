@@ -29,18 +29,20 @@ import meteor.eclipse.plugin.core.components.helpers.ViewUtils;
 import meteor.eclipse.plugin.core.components.mutation.tests.TestMutationAgent;
 import meteor.eclipse.plugin.core.threading.ResultListenerNotifier;
 import meteor.eclipse.plugin.core.tuples.Tuple4;
+import meteor.eclipse.plugin.core.tuples.Tuple5;
 
 public class PluginFacadeImpl implements PluginFacade, ResultListenerNotifier {
 
 	private int refactoringSession = -1;
-	private Double lastResultTestMutationScore, baselineTestMutationScore, lastResultStatementCoverage, baselineStatementCoverage;
+	private Double lastResultTestMutationScore, baselineTestMutationScore, lastResultStatementCoverage,
+			baselineStatementCoverage;
 	private Integer lastResultTestMutationCoverage, baselineTestMutationCoverage;
 	private TestMutationAgent mutationAgent;
 	private ISelection selection;
 	private IProject project;
 	private boolean isLocked;
 	private boolean isValidationDone;
-	private Tuple4<List<ValidationResult>, Boolean, Boolean, Boolean> validationResults;
+	private Tuple5<List<ValidationResult>, Boolean, Boolean, Boolean, Integer> validationResults;
 	private List<ValidationResult> behaviourChangedMutants;
 	private Path tempDir;
 
@@ -154,21 +156,28 @@ public class PluginFacadeImpl implements PluginFacade, ResultListenerNotifier {
 									+ "You can retry your refactoring session running again the test execution."
 									+ "Please review carefully your results.");
 						} else {
-							ViewUtils.changeResult(refactoringSession,
-									"Refactoring unsuccessfull (" + behaviourChangedMutants.size() + ") changes.",
-									null);
+							if (behaviourChangedMutants.size() == 0 && validationResults.fifth > 0) {
+								ViewUtils.changeResult(refactoringSession, "Refactoring unsuccessfull ("
+										+ validationResults.fifth + ") changes in killing tests.", null);
+							} else {
+								ViewUtils.changeResult(refactoringSession,
+										"Refactoring unsuccessfull (" + behaviourChangedMutants.size() + ") changes.",
+										null);
+							}
 						}
 
 					} else {
 						if (!baselineStatementCoverage.equals(lastResultStatementCoverage)) {
 							DecimalFormat df = new DecimalFormat("#.####");
-							ViewUtils.changeResult(refactoringSession, 									
-													"Refactoring unsuccessfull due to statement coverage divergence. (Stmt. cvrg. before: " + df.format(baselineStatementCoverage) + 
-													" - Stmt. cvrg. after: " + df.format(lastResultStatementCoverage) + ")", null);
+							ViewUtils.changeResult(refactoringSession,
+									"Refactoring unsuccessfull due to statement coverage divergence. (Stmt. cvrg. before: "
+											+ df.format(baselineStatementCoverage) + " - Stmt. cvrg. after: "
+											+ df.format(lastResultStatementCoverage) + ")",
+									null);
 						} else {
-							ViewUtils.changeResult(refactoringSession, "Refactoring successfull" + 
-																			(behaviourChangedMutants.size() == 0 && 
-																			 validationResults.fourth ? "*": "") + ".", null);
+							ViewUtils.changeResult(refactoringSession, "Refactoring successfull"
+									+ (behaviourChangedMutants.size() == 0 && validationResults.fourth ? "*" : "")
+									+ ".", null);
 						}
 					}
 
@@ -275,10 +284,11 @@ public class PluginFacadeImpl implements PluginFacade, ResultListenerNotifier {
 			ResultsParser parser = new ResultsParser(results);
 			mutationAgent.setLastResults(results);
 
-			PlatformUI.getWorkbench().getDisplay().syncExec(() -> {				
+			PlatformUI.getWorkbench().getDisplay().syncExec(() -> {
 				lastResultTestMutationCoverage = parser.getSummary().getMutationCoverage();
 				lastResultTestMutationScore = parser.getSummary().getMutationScore();
-				lastResultStatementCoverage =  (double) (parser.getSummary().getLinesCovered()) / parser.getSummary().getLinesTotal();
+				lastResultStatementCoverage = (double) (parser.getSummary().getLinesCovered())
+						/ parser.getSummary().getLinesTotal();
 				ViewUtils.changeLastResultTestMutationScore(refactoringSession, lastResultTestMutationCoverage,
 						lastResultTestMutationScore);
 			});
@@ -293,7 +303,7 @@ public class PluginFacadeImpl implements PluginFacade, ResultListenerNotifier {
 		} catch (Exception e) {
 			throw new RuntimeException("Error on notification.", e);
 		}
-		
+
 	}
 
 	@Override

@@ -18,6 +18,7 @@ import meteor.eclipse.plugin.core.components.mutation.tests.ResultEntry;
 import meteor.eclipse.plugin.core.tuples.Tuple2;
 import meteor.eclipse.plugin.core.tuples.Tuple3;
 import meteor.eclipse.plugin.core.tuples.Tuple4;
+import meteor.eclipse.plugin.core.tuples.Tuple5;
 
 public class ValidatorUtils {
 
@@ -161,7 +162,7 @@ public class ValidatorUtils {
 
 	}
 
-	public Tuple4<List<ValidationResult>, Boolean, Boolean, Boolean> validateMutations(
+	public Tuple5<List<ValidationResult>, Boolean, Boolean, Boolean, Integer> validateMutations(
 			List<ResultEntry> baselineResults, List<ResultEntry> lastRunResults) {
 
 		Log.getLogger().info("________________BASELINE______________");
@@ -230,11 +231,12 @@ public class ValidatorUtils {
 		return checkIsNonDefaultResultValidation(entry1, entry2) || checkIsNonDefaultResultValidation(entry2, entry1);
 	}
 
-	public Tuple4<List<ValidationResult>, Boolean, Boolean, Boolean> compareResults(List<ResultEntry> baselineResults,
+	public Tuple5<List<ValidationResult>, Boolean, Boolean, Boolean, Integer> compareResults(List<ResultEntry> baselineResults,
 			List<ResultEntry> lastRunResults) {
-		Tuple4<List<ValidationResult>, Boolean, Boolean, Boolean> result;
+		Tuple5<List<ValidationResult>, Boolean, Boolean, Boolean, Integer> result;
 		List<ValidationResult> validationResults = new ArrayList<>();
 		boolean hasChangedBehaviour = false, hasNonDefaultResult = false, hasKillingTestsDiff = false;
+		Integer killingTestsChanges = 0;
 
 		// Iterate over the baselineResults list
 		for (ResultEntry baselineEntry : baselineResults) {
@@ -252,6 +254,7 @@ public class ValidatorUtils {
 
 				if (!comparisonEntriesResult.second) {
 					hasKillingTestsDiff = true;
+					killingTestsChanges += 1;
 				}
 				if (validationResult.isChangedBehaviour()) {
 					hasNonDefaultResult = checkIsNonDefaultResult(baselineEntry, matchingEntry);
@@ -310,8 +313,8 @@ public class ValidatorUtils {
 			validationResults.add(validationResult);
 		}
 
-		result = new Tuple4<List<ValidationResult>, Boolean, Boolean, Boolean>(validationResults, hasChangedBehaviour,
-				hasNonDefaultResult, hasKillingTestsDiff);
+		result = new Tuple5<List<ValidationResult>, Boolean, Boolean, Boolean, Integer>(validationResults, hasChangedBehaviour,
+				hasNonDefaultResult, hasKillingTestsDiff, killingTestsChanges);
 
 		return result;
 	}
